@@ -1,0 +1,29 @@
+# ══════════════════════════════════════════════════
+#  requirements.txt — Version PostgreSQL
+# ══════════════════════════════════════════════════
+
+# Serveur web
+fastapi>=0.111.0
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9
+jinja2>=3.1.0
+
+# Base de données
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.9   # ← driver PostgreSQL (remplace sqlite)
+
+# Variables d'environnement
+python-dotenv>=1.0.0     # ← lit le fichier .env
+
+# IA / NLP
+sentence-transformers>=2.7.0
+faiss-cpu>=1.8.0
+groq>=0.9.0
+edge-tts>=6.1.9
+langdetect>=1.0.9
+httpx>=0.27.0
+
+# Data
+numpy>=1.26.0
+pandas>=2.2.0
+pydantic>=2.0.0

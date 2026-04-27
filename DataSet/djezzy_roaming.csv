@@ -1,0 +1,12 @@
+company,offer_category,country_zone,package_type,data_volume_go,voice_minutes_djezzy,sms_count,validity_days,price_dzd,activation_ussd,consultation_ussd,call_center_algeria,call_center_from_abroad,first_call_rule,international_call_format,activation_methods,voice_minutes_received
+Djezzy,Roaming,Tunisia,Internet Only,3,0,0,7,500,*720*11#,*720#,777,+213770850777,First call must be made in Algeria,Use +213 before Algerian number,"USSD, Mobile App, Call Center, Physical Store",
+Djezzy,Roaming,Tunisia,Internet Only,8,0,0,15,1000,*720*11#,*720#,777,+213770850777,First call must be made in Algeria,Use +213 before Algerian number,"USSD, Mobile App, Call Center, Physical Store",
+Djezzy,Roaming,Tunisia,Internet Only,20,0,0,30,2000,*720*11#,*720#,777,+213770850777,First call must be made in Algeria,Use +213 before Algerian number,"USSD, Mobile App, Call Center, Physical Store",
+Djezzy,Roaming,Tunisia,Internet + Voice,5,30,10,7,1000,*720*11#,*720#,777,+213770850777,First call must be made in Algeria,Use +213 before Algerian number,"USSD, Mobile App, Call Center, Physical Store",
+Djezzy,Roaming,Tunisia,Internet + Voice,12,40,10,30,2000,*720*11#,*720#,777,+213770850777,First call must be made in Algeria,Use +213 before Algerian number,"USSD, Mobile App, Call Center, Physical Store",
+Djezzy,Roaming,Tunisia,Internet + Voice,40,60,10,30,5000,*720*11#,*720#,777,+213770850777,First call must be made in Algeria,Use +213 before Algerian number,"USSD, Mobile App, Call Center, Physical Store",
+Djezzy,Roaming,Egypt,Internet + Voice,1,30,10,7,1000,*720*11#,*720#,777,+213770850777,First call must be made in Algeria,Use +213 before Algerian number,"USSD, Mobile App, Call Center, Physical Store",10.0
+Djezzy,Roaming,Egypt,Internet + Voice,3,120,30,15,2000,*720*11#,*720#,777,+213770850777,First call must be made in Algeria,Use +213 before Algerian number,"USSD, Mobile App, Call Center, Physical Store",30.0
+Djezzy,Roaming,Egypt,Internet + Voice,10,300,60,30,4000,*720*11#,*720#,777,+213770850777,First call must be made in Algeria,Use +213 before Algerian number,"USSD, Mobile App, Call Center, Physical Store",60.0
+Djezzy,Roaming,Egypt,Internet Only,2,0,0,15,1000,*720*11#,*720#,777,+213770850777,First call must be made in Algeria,Use +213 before Algerian number,"USSD, Mobile App, Call Center, Physical Store",0.0
+Djezzy,Roaming,Egypt,Internet Only,10,0,0,30,3000,*720*11#,*720#,777,+213770850777,First call must be made in Algeria,Use +213 before Algerian number,"USSD, Mobile App, Call Center, Physical Store",0.0

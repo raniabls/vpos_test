@@ -1,0 +1,16 @@
+content,category,is_active,needs_reindex
+[nouveaux-forfaits-internet-de-djezzy.csv] internet: 350 Go | validity: 12 Mois | price: 7 500 DA [PRIX_BAS] [TRES_GROS_VOLUME],nouveaux-forfaits-internet-de-djezzy,true,true
+"Découvrez notre offre haut de gamme de 350 Go valable 12 mois, idéale pour ceux qui ont besoin d'un gros volume de données, tout cela pour 7 500 DA. C'est l'opportunité de profiter d'une connexion internet sans restriction de volume, même si le prix est élevé.",nouveaux-forfaits-internet-de-djezzy,true,true
+"Avec Djezzy, bénéficiez d'un forfait premium de 350 Go pendant 12 mois, offrant un volume généreux de données, parfait pour une utilisation intensive, le tout à 7 500 DA, un choix qui allie qualité et confort de navigation en toute liberté.",nouveaux-forfaits-internet-de-djezzy,true,true
+[nouveaux-forfaits-internet-de-djezzy.csv] internet: 50 Go | validity: 1 Mois | price: 1 500 DA [PRIX_BAS] [TRES_GROS_VOLUME],nouveaux-forfaits-internet-de-djezzy,true,true
+"Découvrez notre offre internet haut de gamme de 50 Go, valable 1 mois, à seulement 1 500 DA, idéale pour ceux qui ont besoin d'un gros volume de données",nouveaux-forfaits-internet-de-djezzy,true,true
+"Pour un usage intensif, optez pour notre forfait internet premium de 50 Go, avec une validité d'un mois, à 1 500 DA, ce qui représente un accès à un volume généreux de données",nouveaux-forfaits-internet-de-djezzy,true,true
+[nouveaux-forfaits-internet-de-djezzy.csv] internet: 150 Go | validity: 6 Mois | price: 4 000 DA [PRIX_TRES_BAS] [TRES_GROS_VOLUME],nouveaux-forfaits-internet-de-djezzy,true,true
+"Découvrez notre offre internet haut de gamme de 150 Go, valable pendant 6 mois, à seulement 4 000 DA, avec un volume de data très généreux",nouveaux-forfaits-internet-de-djezzy,true,true
+"Profitez d'un forfait internet premium de Djezzy, comprenant 150 Go de data, valable 6 mois, pour un tarif de 4 000 DA, idéal pour ceux qui ont besoin d'un gros volume de données",nouveaux-forfaits-internet-de-djezzy,true,true
+[nouveaux-forfaits-internet-de-djezzy.csv] internet: 60 Go | validity: 3 Mois | price: 2 500 DA [PRIX_BAS] [TRES_GROS_VOLUME],nouveaux-forfaits-internet-de-djezzy,true,true
+"Découvrez notre offre internet haut de gamme de 60 Go, valable pendant 3 mois, pour seulement 2 500 DA, avec un volume de données généreux pour répondre à vos besoins",nouveaux-forfaits-internet-de-djezzy,true,true
+"Avec Djezzy, bénéficiez d'un forfait internet premium de 60 Go, d'une durée de validité de 3 mois, au prix de 2 500 DA, et profitez d'un gros volume de données pour une expérience en ligne sans limite",nouveaux-forfaits-internet-de-djezzy,true,true
+[nouveaux-forfaits-internet-de-djezzy.csv] internet: 15 Go | validity: 1 Mois | price: 1 000 DA [PRIX_TRES_BAS] [VOLUME_MOYEN],nouveaux-forfaits-internet-de-djezzy,true,true
+"Découvrez notre offre internet de 15 Go valable 1 mois au prix de 1 000 DA, idéale pour ceux qui recherchent un forfait haut de gamme avec un volume moyen de données",nouveaux-forfaits-internet-de-djezzy,true,true
+"Avec Djezzy, bénéficiez d'un forfait internet de 15 Go pour une durée d'un mois au coût de 1 000 DA, ce qui représente une option premium avec un volume de données moyennement généreux",nouveaux-forfaits-internet-de-djezzy,true,true
