@@ -279,8 +279,8 @@ function drawMouth(cx, cy) {
       w
     );
 
-    bg.addColorStop(0, '#202020');
-    bg.addColorStop(1, '#050505');
+    bg.addColorStop(0, '#A41414');
+    bg.addColorStop(1, '#A41414');
 
     ctx.fillStyle = bg;
     ctx.fill();
@@ -313,8 +313,8 @@ function drawMouth(cx, cy) {
   ctx.stroke();
 
   /* TOP HIGHLIGHT */
-  ctx.strokeStyle = 'rgba(255,255,255,0.45)';
-  ctx.lineWidth = 1.2;
+  ctx.strokeStyle = 'rgba(210,210,210,0.9)';
+  ctx.lineWidth = 2;
 
   ctx.beginPath();
 
@@ -368,7 +368,7 @@ function drawMouth(cx, cy) {
       }
 
       if (speaking) {
-        mouthPhase += 0.4
+        mouthPhase += 0.2
         mouthOpenTarget = 0.5 + Math.sin(mouthPhase) * 0.6
         mouthOpenTarget = Math.max(0.1, Math.min(1.2, mouthOpenTarget))
       } else {
@@ -376,7 +376,7 @@ function drawMouth(cx, cy) {
         mouthPhase = 0
       }
 
-      mouthOpenCurrent += (mouthOpenTarget - mouthOpenCurrent) * 0.18
+      mouthOpenCurrent += (mouthOpenTarget - mouthOpenCurrent) * 0.1
 
       drawRobot()
     }
