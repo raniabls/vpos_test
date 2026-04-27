@@ -299,16 +299,16 @@ function drawMouth(cx, cy) {
 
   ctx.beginPath();
 
-  ctx.moveTo(mx - w, my);
+ctx.moveTo(mx - w, my - 4);
 
-  ctx.bezierCurveTo(
-    mx - w * 0.5,
-    my + hB * 0.9,
-    mx + w * 0.5,
-    my + hB * 0.9,
-    mx + w,
-    my
-  );
+ctx.bezierCurveTo(
+  mx - w * 0.5,
+  my + hB * 1.1,
+  mx + w * 0.5,
+  my + hB * 1.1,
+  mx + w,
+  my - 4
+);
 
   ctx.stroke();
 
