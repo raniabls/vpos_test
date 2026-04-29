@@ -791,3 +791,106 @@ body::before {
     font-size: .94rem;
   }
 }
+
+@media (max-width: 480px) {
+  #app {
+    height: 100dvh;
+    grid-template-rows: 105px 1fr;
+  }
+
+  #header {
+    height: 105px;
+    padding: 12px;
+    grid-template-columns: 1fr auto;
+  }
+
+  .h-name {
+    font-size: 1.35rem;
+  }
+
+  #status-txt {
+    display: none;
+  }
+
+  .h-btn {
+    height: 36px;
+    padding: 7px 10px;
+    font-size: .75rem;
+  }
+
+  #avatar-zone {
+    border-radius: 22px 22px 0 0;
+  }
+
+  #robot-canvas {
+    width: 280px;
+    transform: translate(-50%, -57%) scale(.82);
+  }
+
+  #av-name {
+    bottom: 125px;
+  }
+
+  #av-name h2 {
+    font-size: 1.35rem;
+  }
+
+  #av-name p {
+    font-size: .78rem;
+  }
+
+  #bottom-input {
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    padding: 10px;
+    border-radius: 20px;
+  }
+
+  .input-shell {
+    padding-left: 12px;
+  }
+
+  .icon-btn {
+    width: 42px;
+    height: 42px;
+  }
+
+  #chat-zone {
+    inset: 118px 8px 8px 8px;
+    border-radius: 22px;
+  }
+
+  #chat-head {
+    height: auto;
+    padding: 12px;
+  }
+
+  .ch-title {
+    font-size: 1rem;
+  }
+
+  .sm-btn {
+    padding: 8px 10px;
+    font-size: .72rem;
+  }
+
+  #messages {
+    padding: 10px;
+  }
+
+  .msg {
+    max-width: 95%;
+    font-size: .88rem;
+    padding: 11px 13px;
+  }
+
+  #chat-input-wrap {
+    padding: 10px;
+  }
+
+  .chat-shell .icon-btn {
+    width: 40px;
+    height: 40px;
+  }
+}
