@@ -878,9 +878,19 @@ body::before {
   }
 
   #avatar-zone {
-    display: none;
-  }
+  display: flex;
+}
 
+#app:not(.chat-hidden) #avatar-zone {
+  display: none;
+}
+
+#app.chat-hidden #avatar-zone {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  border-radius: 0;
+}
   #chat-zone {
     position: relative;
     inset: unset;
