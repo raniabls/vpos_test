@@ -347,6 +347,16 @@ export default function App() {
               speaking={speaking}
               robotRef={robot}
             />
+            <button
+              className={
+                'avatar-talk-btn ' +
+                (listening ? 'listening ' : '') +
+                (detecting ? 'detecting' : '')
+              }
+              onClick={toggleMic}
+              disabled={busy}>
+              <span className="talk-icon">🎙</span>
+            </button>
           </main>
 
           <aside id="chat-zone">
