@@ -207,7 +207,7 @@ export default function App() {
     askIzzy(q);
   }
 
-  async function toggleMic() {
+async function toggleMic() {
     if (busy) return;
 
     if (!navigator.mediaDevices) {
@@ -228,8 +228,53 @@ export default function App() {
       alert('Accès micro refusé.');
       return;
     }
+    
 
     const mediaRecorder = new MediaRecorder(streamRef.current);
+    const audioContext = new AudioContext();
+    const source = audioContext.createMediaStreamSource(streamRef.current);
+
+    const analyser = audioContext.createAnalyser();
+    source.connect(analyser);
+
+    analyser.fftSize = 2048;
+
+    const dataArray = new Uint8Array(analyser.fftSize);
+
+    let silenceStart = null;
+    const silenceDelay = 5000; // 5 SEC
+    const silenceThreshold = 8;
+
+    function detectSilence() {
+     if (mediaRecorder.state === 'inactive') return;
+
+      analyser.getByteTimeDomainData(dataArray);
+
+     let max = 0;
+
+     for (let i = 0; i < dataArray.length; i++) {
+      const v = Math.abs(dataArray[i] - 128);
+
+      if (v > max) max = v;
+     }
+  
+     if (max < silenceThreshold) {
+      if (!silenceStart) {
+      silenceStart = Date.now();
+      }
+
+      const silenceTime = Date.now() - silenceStart;
+
+       if (silenceTime > silenceDelay) {
+        mediaRecorder.stop();
+        return;
+      }
+     } else {
+       silenceStart = null;
+     } 
+
+     requestAnimationFrame(detectSilence);
+    }   
     recorderRef.current = mediaRecorder;
     chunksRef.current = [];
 
@@ -276,6 +321,7 @@ export default function App() {
     };
 
     mediaRecorder.start();
+    detectSilence();
   }
 
   return (
@@ -347,7 +393,18 @@ export default function App() {
               speaking={speaking}
               robotRef={robot}
             />
-          </main>
+
+          </main>            <button
+    className={
+      'avatar-talk-btn ' +
+      (listening ? 'listening ' : '') +
+      (detecting ? 'detecting' : '')
+    }
+    onClick={toggleMic}
+    disabled={busy}
+  >
+    <span className="talk-icon">🎙</span>
+  </button>
 
           <aside id="chat-zone">
             <div id="chat-head">
