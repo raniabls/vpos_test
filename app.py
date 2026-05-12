@@ -18,7 +18,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from groq import Groq
-from langdetect import detect
+
+#from langdetect import detect
+import re
+from lingua import Language, LanguageDetectorBuilder
 
 from database import get_db, init_db, Offer, Prompt, Conversation
 from embeddings import get_embedder, load_or_build_index, rebuild_index
@@ -35,8 +38,8 @@ if not GROQ_API_KEY:
 
 AUDIO_FOLDER    = "static/audio/"
 FAISS_K         = 10 # jai diminuer
-DISTANCE_THRESH = 0.4 # il etais 0,5 jai changer
-MAX_TOKENS      = 1000
+DISTANCE_THRESH = 0.6 # il etais 0,5 jai changer
+MAX_TOKENS      = 500
 MAX_HISTORY     = 20
 
 os.makedirs(AUDIO_FOLDER, exist_ok=True)
@@ -55,14 +58,18 @@ LANGUAGE_NAMES = {
 }
 
 LANG_KEYWORDS = {
-    "fr": ["bonjour","salut","bonsoir","merci","oui","non","aide",
-           "comment","quoi","quel","prix","offre","forfait","je","votre"],
-    "ar": ["مرحبا","السلام","شكرا","نعم","لا","كيف","ما","نعم","سعر",
-           "عرض","مساعدة","اريد","عندي","هل"],
-    "en": ["hello","hi","yes","no","help","how","what","price",
-           "offer","plan","thanks","good","morning","is","are",
-           "can","have","want","does","the","my","i","dont",
-           "activate","explain","need","use"] 
+    "fr": ["bonjour", "salut", "bonsoir", "merci", "oui", "non", "aide",
+           "comment", "quoi", "quel", "prix", "offre", "forfait", "je", "votre",
+           "je voudrais", "c'est quoi", "combien", "activer", "recharger",
+           "moins", "plus", "cher", "internet", "appel", "données"],
+    "ar": ["مرحبا", "السلام", "شكرا", "نعم", "لا", "كيف", "ما", "سعر",
+           "عرض", "مساعدة", "اريد", "عندي", "هل",
+           "كيفاش", "واش", "بغيت", "ديناراتش", "راني", "نحب", "عطيني"],
+    "en": ["hello", "hi", "yes", "no", "help", "how", "what", "price",
+           "offer", "plan", "thanks", "good", "morning", "is", "are",
+           "can", "have", "want", "does", "the", "my", "i", "dont",
+           "activate", "explain", "need", "use",
+           "how much", "i want", "can you", "tell me", "cheaper", "more"]
 }
 
 
@@ -110,7 +117,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "https://vpos-react-96hd.vercel.app"],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -137,46 +144,67 @@ class OfferUpdate(BaseModel):
 class PromptUpdate(BaseModel):
     content: str
 
+# ── Initialiser lingua une seule fois au démarrage (pas à chaque appel)
+_lingua_detector = LanguageDetectorBuilder.from_languages(
+    Language.FRENCH, Language.ARABIC, Language.ENGLISH
+).build()
 
-# Detection de la langue : 
-  # 1- Détection la langue de la question de l'utilisateur
+
+def _has_keyword(text: str, kw: str) -> bool:
+    # Vérifie les mots entiers pour éviter les faux positifs
+    return bool(re.search(r'\b' + re.escape(kw) + r'\b', text))
+
 def detect_lang(text: str) -> str:
     text_lower = text.lower().strip()
-# parcourir dictionnaire de mots courants pour fr, ar, et en. Dès qu'un mot correspond, elle retourne immédiatement la langue. 
-# l'ordre d'itération du dictionnaire peut introduire un biais (le français est vérifié en premier).
+
+    # ── Couche 1 : score de mots-clés (plus de biais d'ordre)
+    scores = {"fr": 0, "ar": 0, "en": 0}
     for lang, keywords in LANG_KEYWORDS.items():
         for kw in keywords:
-            if kw in text_lower:
-                return lang
+            if _has_keyword(text_lower, kw):
+                scores[lang] += 1
 
+    best_lang  = max(scores, key=scores.get)
+    best_score = scores[best_lang]
+    if best_score > 0:
+        return best_lang
+
+    # ── Couche 2 : caractères Unicode arabes
     if sum(1 for c in text if '\u0600' <= c <= '\u06FF') > 0:
         return "ar"
 
+    # ── Couche 3 : lingua (seulement si texte suffisamment long)
     if len(text_lower) >= 10:
         try:
-            l = detect(text)
-            if l == "ar":         return "ar"
-            if l in ["fr","ca"]:  return "fr"
-            if l == "en":         return "en"
+            result = _lingua_detector.detect_language_of(text)
+            if result == Language.ARABIC:  return "ar"
+            if result == Language.FRENCH:  return "fr"
+            if result == Language.ENGLISH: return "en"
         except Exception:
             pass
 
+    # ── Fallback
     return "fr"
 
-
 def detect_lang_response(answer: str, lang_question: str) -> str:
-    if sum(1 for c in answer if '\u0600' <= c <= '\u06FF') > 2:
+    
+    # ── Couche 1 : caractères Unicode arabes (priorité absolue)
+    arabic_chars = sum(1 for c in answer if '\u0600' <= c <= '\u06FF')
+    if arabic_chars > 2:
         return "ar"
+
+    # ── Couche 2 : lingua (si texte suffisamment long)
     if len(answer.strip()) >= 20:
         try:
-            l = detect(answer)
-            if l == "ar":        return "ar"
-            if l in ["fr","ca"]: return "fr"
-            if l == "en":        return "en"
+            result = _lingua_detector.detect_language_of(answer)
+            if result == Language.ARABIC:  return "ar"
+            if result == Language.FRENCH:  return "fr"
+            if result == Language.ENGLISH: return "en"
         except Exception:
             pass
-    return lang_question
 
+    # ── Fallback : on fait confiance à la langue de la question
+    return lang_question
 
 # ════════════════════════════════════════════════════════════════════
 #  GESTION HISTORIQUE (PostgreSQL)
@@ -217,10 +245,12 @@ def rag_query(question: str, session_id: str, lang: str,
     groq_client = request.app.state.groq_client
 
     # Recherche vectorielle FAISS
-    import numpy as np
     question_embedding = embedder.encode([question], convert_to_numpy=True)
     faiss.normalize_L2(question_embedding)
+    start = time.time()
     D, I = faiss_index.search(question_embedding, k=min(FAISS_K, len(documents)))
+    end = time.time()
+    print(f"⏱️ Temps recherche FAISS: {end - start:.4f} secondes")
 
     seen, filtered = set(), []
     for j in range(len(I[0])):
@@ -253,15 +283,23 @@ def rag_query(question: str, session_id: str, lang: str,
     history  = get_history(session_id, db)
     messages = [{"role": "system", "content": system_prompt}]
     messages.extend(history)
+
+    # POUR Injecter un rappel fort de langue juste avant la question
+    lang_name = LANGUAGE_NAMES.get(lang, "French")
+    messages.append({
+     "role": "system", 
+     "content": f"⚠️ MANDATORY: The user's next message is in {lang_name}. Your response MUST be entirely in {lang_name}. This overrides all conversation history."
+    })
     messages.append({"role": "user", "content": question})
 
     response = groq_client.chat.completions.create(
         model      = "llama-3.3-70b-versatile",
         messages   = messages,
-        max_tokens = MAX_TOKENS
+        max_tokens = MAX_TOKENS,
+        # extra_body = {"reasoning_effort": "none"}
     )
 
-    return response.choices[0].message.content.strip()
+    return response.choices[0].message.content.strip(), context
 
 #  SYNTHÈSE VOCALE
 async def speak_with_meta(text: str, lang: str) -> tuple:
@@ -317,7 +355,7 @@ async def ask(
         raise HTTPException(status_code=400, detail="Question vide")
 
     lang_question          = detect_lang(question)
-    answer                 = rag_query(question, session_id, lang_question, db, request)
+    answer, context                 = rag_query(question, session_id, lang_question, db, request)
     lang_voice             = detect_lang_response(answer, lang_question)
     filename, metadata     = await speak_with_meta(answer, lang_voice)
     audio_url = f"/static/audio/{filename}" if filename else None
@@ -337,7 +375,8 @@ async def ask(
         "audio_url":   audio_url,
         "lang":        lang_voice,
         "metadata":    metadata,
-        "history_len": count_exchanges(session_id, db)
+        "history_len": count_exchanges(session_id, db),
+        "context" : context
     }
 
 
@@ -476,9 +515,47 @@ async def transcribe(audio: UploadFile = File(...)):
     print(f"✅ Whisper : '{text}' | langue: {lang_w} → {lang}")
 
     return {"text": text, "lang": lang}
-# ════════════════════════════════════════════════════════════════════
-#  POINT D'ENTRÉE
-# ════════════════════════════════════════════════════════════════════
+
+#nouvelle route pour l'évaluation
+@app.post("/ask-text")
+async def ask_text(
+    body: QuestionInput,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    try:
+        question = body.question.strip()
+
+        if not question:
+            raise HTTPException(status_code=400, detail="Question vide")
+
+        # Détection langue
+        lang_question = detect_lang(question)
+
+        # RAG
+        answer, context = rag_query(
+            question,
+            body.session_id,
+            lang_question,
+            db,
+            request
+        )
+
+        return {
+            "answer": answer,
+            "context": context,
+            "lang": lang_question
+        }
+
+    except Exception as e:
+        print(f"❌ /ask-text ERROR: {e}")
+
+        return {
+            "answer": "",
+            "context": "",
+            "lang": "fr",
+            "error": str(e)
+        }
 
 if __name__ == "__main__":
     import uvicorn
