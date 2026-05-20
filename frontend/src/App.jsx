@@ -14,6 +14,27 @@ export default function App() {
   const chunksRef = useRef([]);
   const streamRef = useRef(null);
   const bottomRef = useRef(null);
+  const currentAudioRef = useRef(null);
+
+  const [isMuted, setIsMuted] = useState(() => {
+    return localStorage.getItem('izzy_muted') === 'true';
+  });
+
+  const toggleMute = () => {
+    const newMuted = !isMuted;
+    setIsMuted(newMuted);
+    localStorage.setItem('izzy_muted', String(newMuted));
+    if (currentAudioRef.current) {
+      currentAudioRef.current.muted = newMuted;
+    }
+  };
+
+  const stopCurrentAudio = () => {
+    if (currentAudioRef.current) {
+      currentAudioRef.current.pause();
+      currentAudioRef.current = null;
+    }
+  };
 
   const [loading, setLoading] = useState(true);
   const [loadPct, setLoadPct] = useState(0);
@@ -126,14 +147,18 @@ export default function App() {
         setRobotSpeaking(true);
 
         const aud = new Audio(`${API_BASE}${d.audio_url}`);
+        aud.muted = isMuted;
+        currentAudioRef.current = aud;
 
         aud.onended = () => {
+          if (currentAudioRef.current === aud) currentAudioRef.current = null;
           robot.current.setSpeaking(false);
           setRobotSpeaking(false);
           setBusy(false);
         };
 
         aud.onerror = () => {
+          if (currentAudioRef.current === aud) currentAudioRef.current = null;
           robot.current.setSpeaking(false);
           setRobotSpeaking(false);
           setBusy(false);
@@ -143,6 +168,7 @@ export default function App() {
           .play()
           .then(() => syncLip(aud, d.metadata || []))
           .catch(() => {
+            if (currentAudioRef.current === aud) currentAudioRef.current = null;
             robot.current.setSpeaking(false);
             setRobotSpeaking(false);
             setBusy(false);
@@ -160,6 +186,7 @@ export default function App() {
   }
 
   async function resetConversation() {
+    stopCurrentAudio();
     await apiFetch('/reset', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -173,6 +200,7 @@ export default function App() {
   }
 
   function newChat() {
+    stopCurrentAudio();
     sessionRef.current = crypto.randomUUID();
     localStorage.setItem('izzy_session', sessionRef.current);
 
@@ -207,7 +235,7 @@ export default function App() {
     askIzzy(q);
   }
 
-async function toggleMic() {
+  async function toggleMic() {
     if (busy) return;
 
     if (!navigator.mediaDevices) {
@@ -380,6 +408,25 @@ async function toggleMic() {
               </div>
 
               <button
+                className={`h-btn sound-btn ${isMuted ? 'muted' : ''}`}
+                onClick={toggleMute}
+                title={isMuted ? "Activer le son" : "Désactiver le son"}
+              >
+                {isMuted ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                    <line x1="23" y1="9" x2="17" y2="15"></line>
+                    <line x1="17" y1="9" x2="23" y2="15"></line>
+                  </svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                  </svg>
+                )}
+              </button>
+
+              <button
                 className="h-btn"
                 onClick={() => setChatHidden(!chatHidden)}
               >
@@ -388,23 +435,27 @@ async function toggleMic() {
             </div>
           </header>
 
-          <main id="avatar-zone">
-            <RobotCanvas
-              speaking={speaking}
-              robotRef={robot}
-            />
+<main id="avatar-zone">
+  <div className="robot-wrapper">
+    <RobotCanvas
+      speaking={speaking}
+      robotRef={robot}
+    />
 
-          </main>            <button
-    className={
-      'avatar-talk-btn ' +
-      (listening ? 'listening ' : '') +
-      (detecting ? 'detecting' : '')
-    }
-    onClick={toggleMic}
-    disabled={busy}
-  >
-    <span className="talk-icon">🎙</span>
-  </button>
+    {chatHidden && (
+      <button
+        className={
+          'floating-mic ' +
+          (listening ? 'listening ' : '') +
+          (detecting ? 'detecting' : '')
+        }
+        onClick={toggleMic}
+      >
+        🎙
+      </button>
+    )}
+  </div>
+</main>
 
           <aside id="chat-zone">
             <div id="chat-head">
