@@ -1,0 +1,13 @@
+nom_offre,validite_jours,volume_internet_go,prix_da,prix_remise,condition_remise
+Djezzy Net,Mois,220 Go,4000 DA,,
+Djezzy Net,Mois,100 Go,2000 DA,,
+Djezzy Net,Mois,60 Go,1500 DA,750 DA,Remise 50% sur la 2ème souscription
+Djezzy Net,Mois,30 Go,1000 DA,500 DA,Remise 50% sur la 2ème souscription
+Djezzy Net,Mois,12 Go,500 DA,250 DA,Remise 50% sur la 2ème souscription
+Djezzy Net,Semaine,20 Go,500 DA,,
+Djezzy Net,Semaine,10 Go,300 DA,150 DA,Remise 50% sur la 2ème souscription
+Djezzy Net,Semaine,4 Go,150 DA,75 DA,Remise 50% sur la 2ème souscription
+Djezzy Net,Jour,5 Go,150 DA,,
+Djezzy Net,Jour,2 Go,100 DA,50 DA,Remise 50% sur la 2ème souscription
+Djezzy Net,Jour,600 Mo,50 DA,25 DA,Remise 50% sur la 2ème souscription
+Djezzy Net,Jour,300 Mo,30 DA,15 DA,Remise 50% sur la 2ème souscription

@@ -1,0 +1,10 @@
+categorie,service,description,fonctionnalites,conditions,activation,tarification,cible,remarques
+Facturation,Facture détaillée ponctuelle,"Permet d’obtenir un relevé détaillé des consommations (appels, SMS, internet).","Historique jusqu’à 90 jours, détails des 3 dernières factures.",Abonné Djezzy (prépayé/postpayé).,Faire demande en boutique ou centres Djezzy.,300 DA/page,Clients Djezzy,Disponible pour consultation détaillée
+Facturation,Facture détaillée mensuelle,Relevé mensuel complet des consommations.,Détail appels sortants et services.,Abonné postpayé.,Disponible chaque mois.,Inclus ou selon offre,Clients postpayés,
+Facturation,B2Mail,Réception facture par email.,Accès rapide aux factures électroniques.,Avoir email valide.,Demande en agence ou centre d’appel.,Gratuit,Clients postpayés,Installation gratuite
+Facturation,E-Facture,Consultation et paiement factures via cartes CIB.,Accès sécurisé en ligne.,Connexion internet + carte CIB.,Via site ou app.,Selon facture,Clients,
+Facturation,E-Facture VISA,Paiement facture via carte VISA.,Paiement sécurisé 24/7.,Carte VISA + internet.,Via app ou site.,,Clients,Disponible selon service
+Facturation,Prélèvement automatique,Paiement automatique via compte bancaire.,"Gain de temps, sécurité, évite oubli paiement.",Compte bancaire ou CCP.,Remplir formulaire en agence.,Gratuit,Clients,Prélèvement 20 jours après facture
+Facturation,Paiement carte recharge,Paiement facture via carte scratch.,Utilisation simple via USSD.,Carte recharge.,Composer *700*code# ou *701*code#.,Selon recharge,Clients,
+Facturation,Info facture 787,Accès aux infos facture 24/7.,"Dernière facture, consommation.",Ligne active.,Composer *787# ou appeler 0770 85 77 87.,Gratuit,Clients,
+Facturation,Nouvelle facturation,Système de cycle de facturation amélioré.,"Cycles: 1-30/31, 16-15, 22-21, 08-07.",,,,Clients,Facturation mensuelle optimisée

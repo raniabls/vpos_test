@@ -1,5 +1,0 @@
-Country,Package Type,Data (Go),Minutes Received,Minutes to Djezzy,SMS Sent,Validity (Days),Price (DA),USSD Code,App Android Link,App iOS Link,Call Center,Store Link
-Arabie Saoudite,Internet & Voix,1,10.0,10,10.0,7,1000,*720*11#,https://play.google.com/store/apps/details?id=com.djezzy.internet,https://itunes.apple.com/sa/app/djezzy-internet/id1262903573,777,https://www.djezzy.dz/nos-boutiques/
-Arabie Saoudite,Internet & Voix,5,30.0,ILLIMITÉS,30.0,30,2000,*720*11#,https://play.google.com/store/apps/details?id=com.djezzy.internet,https://itunes.apple.com/sa/app/djezzy-internet/id1262903573,777,https://www.djezzy.dz/nos-boutiques/
-Arabie Saoudite,Internet & Voix,12,60.0,ILLIMITÉS,60.0,30,5000,*720*11#,https://play.google.com/store/apps/details?id=com.djezzy.internet,https://itunes.apple.com/sa/app/djezzy-internet/id1262903573,777,https://www.djezzy.dz/nos-boutiques/
-Arabie Saoudite,Internet,2,,,,15,1200,*720*11#,https://play.google.com/store/apps/details?id=com.djezzy.internet,https://itunes.apple.com/sa/app/djezzy-internet/id1262903573,777,https://www.djezzy.dz/nos-boutiques/

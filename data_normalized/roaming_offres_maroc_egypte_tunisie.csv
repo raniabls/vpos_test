@@ -1,0 +1,12 @@
+pays,type_offre,volume_internet_go,appels_recus,appels_vers_djezzy,sms,validite_jours,prix_da
+Égypte,Internet,2 Go,,,,15 jours,1000 DA
+Égypte,Internet,10 Go,,,,30 jours,3000 DA
+Égypte,Internet & Voix,1 Go,10 min appels reçus,30 min appels vers Djezzy,10 SMS,7 jours,1000 DA
+Égypte,Internet & Voix,3 Go,30 min appels reçus,2 heures appels vers Djezzy,30 SMS,15 jours,2000 DA
+Égypte,Internet & Voix,10 Go,60 min appels reçus,5 heures appels vers Djezzy,60 SMS,30 jours,4000 DA
+Tunisie,Internet,3 Go,,,,7 jours,500 DA
+Tunisie,Internet,8 Go,,,,15 jours,1000 DA
+Tunisie,Internet,20 Go,,,,30 jours,2000 DA
+Tunisie,Internet & Voix,5 Go,,30 min appels vers Djezzy,10 SMS,7 jours,1000 DA
+Tunisie,Internet & Voix,12 Go,,40 min appels vers Djezzy,10 SMS,30 jours,2000 DA
+Tunisie,Internet & Voix,40 Go,,60 min appels vers Djezzy,10 SMS,30 jours,5000 DA

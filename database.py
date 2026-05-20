@@ -1,13 +1,13 @@
 import os
 from datetime import datetime
-from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, DateTime
+from sqlalchemy import create_engine, Column, Integer, String, Text, Boolean, DateTime, Float
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from dotenv import load_dotenv
 load_dotenv()
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://postgres:rania@localhost:5432/izzy"
+    "postgresql://postgres:rania@localhost:5432/izzy_chroma"
 )
 
 engine = create_engine(
@@ -28,9 +28,26 @@ def get_db():
         db.close()
 
 # ══════════════════════════════
+#  MIXIN — colonnes numériques
+#  Partagées par Offer, FAQ, Service
+#  pour permettre le SQL search
+# ══════════════════════════════
+class NumericMixin:
+    prix        = Column(Integer,  default=0)
+    prix_remise = Column(Integer,  default=0)
+    data_go     = Column(Float,    default=0.0)
+    illimite    = Column(Boolean,  default=False)
+    duree_j     = Column(Integer,  default=30)
+    reseau      = Column(String(10), default="4g")
+    type_offre  = Column(String(30), default="prepaye")
+    roaming     = Column(Boolean,  default=False)
+    nom_offre   = Column(String(200), default="")
+
+
+# ══════════════════════════════
 #  TABLE 1 — OFFRES
 # ══════════════════════════════
-class Offer(Base):
+class Offer(NumericMixin, Base):
     __tablename__ = "offers"
     id            = Column(Integer, primary_key=True, index=True)
     content       = Column(Text, nullable=False, unique=True)
@@ -45,9 +62,9 @@ class Offer(Base):
                 "category": self.category, "active": self.is_active}
 
 # ══════════════════════════════
-#  TABLE 2 — FAQ  (NOUVEAU)
+#  TABLE 2 — FAQ
 # ══════════════════════════════
-class FAQ(Base):
+class FAQ(NumericMixin, Base):
     __tablename__ = "faq"
     id            = Column(Integer, primary_key=True, index=True)
     content       = Column(Text, nullable=False, unique=True)
@@ -62,9 +79,9 @@ class FAQ(Base):
                 "category": self.category, "active": self.is_active}
 
 # ══════════════════════════════
-#  TABLE 3 — SERVICES  (NOUVEAU)
+#  TABLE 3 — SERVICES
 # ══════════════════════════════
-class Service(Base):
+class Service(NumericMixin, Base):
     __tablename__ = "services"
     id            = Column(Integer, primary_key=True, index=True)
     content       = Column(Text, nullable=False, unique=True)
@@ -105,48 +122,61 @@ class Conversation(Base):
         return {"role": self.role, "content": self.content}
 
 # ══════════════════════════════
-#  TABLE 6 — EMBEDDING CACHE
-# ══════════════════════════════
-class EmbeddingCache(Base):
-    __tablename__ = "embedding_cache"
-    id           = Column(Integer, primary_key=True)
-    content_hash = Column(String(32), nullable=False)
-    faiss_path   = Column(String(255), nullable=False)
-    offer_count  = Column(Integer, default=0)
-    created_at   = Column(DateTime, default=datetime.utcnow)
-
-# ══════════════════════════════
 #  PROMPT PAR DÉFAUT
 # ══════════════════════════════
 DEFAULT_PROMPT = """You are Izzy, a warm and professional virtual assistant for Djezzy Algeria.
 
 ⚠️ CRITICAL : The user is speaking {language_name}. You MUST reply in {language_name} ONLY.
-No matter what language the context or data is in, your reply must be in {language_name}.
 
 ABSOLUTE RULES:
-2. Never repeat information already given in this conversation.
-3. Speak naturally like a human, never copy raw data.
-4. Be concise. End with ONE short useful question.
-5. For a specific price, ONLY show offers at that EXACT price.
-6. Never mention file names or data sources.
-7. ONLY use context below — NEVER invent anything not written here.
-8. Use conversation history for contextual, coherent answers.
-9. NEVER use bullet points, dashes or numbered lists.
-   Write in natural flowing sentences only.
+1. Never repeat information already given in this conversation.
+2. Speak naturally like a human, never copy raw data.
+3. Be concise. End with ONE short useful question only if needed.
+4. NEVER use bullet points, dashes or numbered lists. Plain text only.
+5. ONLY use context below — NEVER invent anything not written here.
 
 Available information:
 {context}"""
 
+
 def init_db():
     try:
         Base.metadata.create_all(bind=engine)
-        print("✅ Tables PostgreSQL créées (offers, faq, services, prompts, conversations, embedding_cache)")
+        print("✅ Tables PostgreSQL créées")
     except Exception as e:
         print(f"❌ Erreur connexion PostgreSQL : {e}")
         raise
 
     db = SessionLocal()
     try:
+        from sqlalchemy import inspect
+        inspector = inspect(engine)
+
+        # Ajouter les nouvelles colonnes si elles n'existent pas (migration douce)
+        for table_name in ["offers", "faq", "services"]:
+            existing_cols = {c["name"] for c in inspector.get_columns(table_name)}
+            new_cols = {
+                "prix": "INTEGER DEFAULT 0",
+                "prix_remise": "INTEGER DEFAULT 0",
+                "data_go": "FLOAT DEFAULT 0.0",
+                "illimite": "BOOLEAN DEFAULT FALSE",
+                "duree_j": "INTEGER DEFAULT 30",
+                "reseau": "VARCHAR(10) DEFAULT '4g'",
+                "type_offre": "VARCHAR(30) DEFAULT 'prepaye'",
+                "roaming": "BOOLEAN DEFAULT FALSE",
+                "nom_offre": "VARCHAR(200) DEFAULT ''",
+            }
+            from sqlalchemy import text
+            with engine.connect() as conn:
+                for col_name, col_def in new_cols.items():
+                    if col_name not in existing_cols:
+                        conn.execute(text(
+                            f"ALTER TABLE {table_name} ADD COLUMN {col_name} {col_def}"
+                        ))
+                        print(f"  ➕ Colonne '{col_name}' ajoutée à '{table_name}'")
+                conn.commit()
+
+        from database import Prompt
         if db.query(Prompt).count() == 0:
             db.add(Prompt(
                 name="system_prompt",
@@ -155,6 +185,7 @@ def init_db():
             ))
             db.commit()
             print("✅ Prompt par défaut inséré")
+
     finally:
         db.close()
 

@@ -1,0 +1,3 @@
+categorie,service,description,utilisation,tarification,validite_jours,support
+International,Appels internationaux,Service permettant d’émettre des appels vers l’étranger (fixe et mobile),Composer 00 + indicatif pays + numéro,Prépayé: facturation par tranche de 30 sec / Postpayé: par minute,Variable selon destination,Service client: 788
+International,Roaming,"Utiliser appels, SMS et internet à l’étranger",Activer roaming avant départ,"Appels, SMS, Data disponibles",Variable selon pays,Recharge via *720# ou app

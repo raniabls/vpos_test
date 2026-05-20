@@ -1,0 +1,9 @@
+categorie,service,description,fonctionnalites,conditions,activation,codes,limites,cible,remarques
+Rechargement,Flexy,Service pour recharger un numéro Djezzy ou payer une facture sans déplacement.,"Recharge libre, paiement facture, disponible dans tous les points de vente Djezzy.",Ligne Djezzy active.,Via SMS / USSD / points de vente.,*760*numéro*montant*PIN# (recharge) | *761*numéro*montant*PIN# (facture),Max 5 transactions/jour.,Clients Djezzy,Disponible partout
+Rechargement,Flexy Code,Générer un code de substitution pour masquer son numéro lors du rechargement.,Code à 8 chiffres utilisé à la place du numéro.,Ligne active.,Composer *765#.,,Gratuit,Clients Djezzy,Utilisé pour sécurité
+Rechargement,Flexily,Transfert de crédit entre abonnés Djezzy.,Transfert entre 50 DA et 1000 DA.,Ligne active + PIN.,*770# ou App Djezzy.,Changer PIN: *770*AncienPIN*NouveauPIN#,6 transactions/jour,Clients Djezzy,PIN par défaut 0000
+Rechargement,Flexy Visa / Edahabia,Recharge via carte bancaire ou carte Edahabia.,"Paiement sécurisé, disponible 24/7.",Carte valide + internet.,Via site Djezzy ou App.,Connexion plateforme SATIM ou Edahabia.,Gratuit (hors recharge),Clients,Recharge immédiate
+Rechargement,Parcours App Djezzy,Étapes recharge via application.,Télécharger app → ouvrir → choisir recharge → entrer montant → valider paiement.,Smartphone + internet.,Application Djezzy.,,,Clients,Disponible Android/iOS
+Rechargement,Parcours Site Web,Étapes recharge via site Djezzy.,Accéder site → menu E-payment → saisir numéro → montant → choisir paiement → valider.,Connexion internet.,www.djezzy.dz,,,Clients,Paiement sécurisé
+Rechargement,Tranquilo,Crédit d’urgence pour appels et SMS.,20 DA (24h) ou 50/100 DA (7 jours).,Ancienneté 3 mois + crédit <5 DA.,*100# ou App.,,Frais: 2/5/10 DA,Prépayé,Déduit au prochain rechargement
+Rechargement,Conditions Tranquilo,Conditions d’accès au service.,"Ligne active depuis 3 mois, crédit faible.",,,,,Clients,Obligatoire pour activation

@@ -1,9 +1,0 @@
-content,category,is_active,needs_reindex
-[offres_djezzy_tod.csv] Nom_Offre: TOD MOBILE | Volume_Internet_GO: 5 GO | Ecrans: 1 Ecran | Appareils: 1 Appareil | Prix_DA: 800 DA | Validite_Jours: 30 Jours [PRIX_MOYEN] [VOLUME_MOYEN] [LONGUE_DUREE],offres_djezzy_tod,true,true
-[offres_djezzy_tod.csv] Nom_Offre: TOD 24 HEURES | Volume_Internet_GO: 1 GO | Ecrans: 1 Ecran | Appareils: 5 Appareils | Prix_DA: 350 DA | Validite_Jours: 24 Heures [PRIX_BAS] [PETIT_VOLUME],offres_djezzy_tod,true,true
-[offres_djezzy_tod.csv] Nom_Offre: TOD 7 JOURS | Volume_Internet_GO: 1 GO | Ecrans: 1 Ecran | Appareils: 5 Appareils | Prix_DA: 500 DA | Validite_Jours: 7 Jours [PRIX_BAS] [PETIT_VOLUME] [DUREE_MOYENNE],offres_djezzy_tod,true,true
-[offres_djezzy_tod.csv] Nom_Offre: TOD 1 MOIS | Volume_Internet_GO: 10 GO | Ecrans: 1 Ecran | Appareils: 5 Appareils | Prix_DA: 1800 DA | Validite_Jours: 30 Jours [PRIX_ELEVE] [PETIT_VOLUME] [LONGUE_DUREE],offres_djezzy_tod,true,true
-[offres_djezzy_tod.csv] Nom_Offre: TOD 3 MOIS | Volume_Internet_GO: 20 GO | Ecrans: 1 Ecran | Appareils: 5 Appareils | Prix_DA: 5000 DA | Validite_Jours: 90 Jours [PRIX_ELEVE] [PETIT_VOLUME] [LONGUE_DUREE],offres_djezzy_tod,true,true
-[offres_djezzy_tod.csv] Nom_Offre: TOD 6 MOIS | Volume_Internet_GO: 40 GO | Ecrans: 1 Ecran | Appareils: 5 Appareils | Prix_DA: 9800 DA | Validite_Jours: 180 Jours [PRIX_ELEVE] [PETIT_VOLUME] [LONGUE_DUREE],offres_djezzy_tod,true,true
-[offres_djezzy_tod.csv] Nom_Offre: TOD 12 MOIS | Volume_Internet_GO: 100 GO | Ecrans: 1 Ecran | Appareils: 5 Appareils | Prix_DA: 18000 DA | Validite_Jours: 365 Jours [PRIX_ELEVE] [PETIT_VOLUME] [LONGUE_DUREE],offres_djezzy_tod,true,true
-[offres_djezzy_tod.csv] Nom_Offre: TOD 4K | Volume_Internet_GO: 15 GO | Ecrans: 2 Ecrans | Appareils: 5 Appareils | Prix_DA: 2800 DA | Validite_Jours: 30 Jours [PRIX_ELEVE] [VOLUME_MOYEN] [LONGUE_DUREE],offres_djezzy_tod,true,true
