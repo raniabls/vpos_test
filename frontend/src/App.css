@@ -261,6 +261,68 @@ input::placeholder { color: #b0b0c1; }
   height: 40px;
 }
 
+/* ===== SOUND BUTTON ===== */
+
+.h-btn.sound-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  color: var(--red);
+  background: #fff;
+
+  transition:
+    transform .25s ease,
+    box-shadow .25s ease,
+    background .25s ease,
+    color .25s ease,
+    border-color .25s ease;
+
+  box-shadow: 0 6px 18px rgba(0,0,0,.12);
+}
+
+/* état muet */
+
+.h-btn.sound-btn.muted {
+  background: rgba(255,255,255,.14);
+
+  color: rgba(255,255,255,.88);
+
+  border: 1px solid rgba(255,255,255,.25);
+
+  box-shadow: none;
+}
+
+/* hover */
+
+.h-btn.sound-btn:hover {
+  transform: scale(1.08) translateY(-1px);
+
+  box-shadow: 0 10px 24px rgba(0,0,0,.18);
+}
+
+/* hover muted */
+
+.h-btn.sound-btn.muted:hover {
+  background: rgba(255,255,255,.24);
+
+  color: #fff;
+
+  border-color: rgba(255,255,255,.4);
+}
+
+/* click */
+
+.h-btn.sound-btn:active {
+  transform: scale(.94);
+}
+
 /* ROBOT */
 #avatar-zone {
   grid-row: 2;
