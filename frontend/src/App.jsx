@@ -445,7 +445,7 @@ export default function App() {
     {chatHidden && (
       <button
         className={
-          'floating-mic ' +
+          'avatar-talk-btn ' +
           (listening ? 'listening ' : '') +
           (detecting ? 'detecting' : '')
         }
