@@ -58,7 +58,7 @@ export default function App() {
   const [messages, setMessages] = useState([
     {
       role: 'izzy',
-      text: "Bonjour ! Je suis Izzy 👋\nComment puis-je vous aider aujourd'hui ?",
+      text: "Bonjour ! Je suis Izzy Comment puis-je vous aider aujourd'hui ?",
     },
   ]);
 
@@ -240,33 +240,25 @@ export default function App() {
     }
   }
 
-  async function resetConversation() {
-    stopCurrentAudio();
-    // await apiFetch('/reset', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({
-    //     session_id: sessionRef.current,
-    //   }),
-    // });
-
-    setHistoryLen(0);
-    setMessages([{ role: 'izzy', text: 'Conversation réinitialisée 👋' }]);
-  }
-
-  function newChat() {
+  function startNewLocalConversation() {
+    // Stopper l'audio en cours.
     stopCurrentAudio();
 
+    // Annuler l'ancienne requête si elle est encore en cours.
     if (requestAbortRef.current) {
       requestAbortRef.current.abort();
       requestAbortRef.current = null;
     }
 
+    // Empêche une ancienne réponse arrivée en retard de s'afficher.
     askRunRef.current += 1;
 
+    // Nouvelle session : le backend ne récupère pas l'ancien historique.
+    // IMPORTANT : on ne fait PAS appel à /reset, donc rien n'est supprimé de PostgreSQL.
     sessionRef.current = crypto.randomUUID();
     localStorage.setItem('izzy_session', sessionRef.current);
 
+    // Vider uniquement l'affichage frontend.
     setMessages([
       {
         role: 'izzy',
@@ -279,7 +271,19 @@ export default function App() {
     setChatInput('');
     setLang('fr');
     setBusy(false);
-    setRobotSpeaking(false);
+    setSpeakingState(false);
+    setListening(false);
+    setDetecting(false);
+    setDot('ready');
+    setStatus('Prête');
+  }
+
+  function resetConversation() {
+    startNewLocalConversation();
+  }
+
+  function newChat() {
+    startNewLocalConversation();
   }
 
   function sendVocal() {
@@ -449,7 +453,7 @@ export default function App() {
 
               <div>
                 <div className="h-name">IZZY</div>
-                <div className="h-sub">DJEZZY AI ASSISTANT</div>
+                <div className="h-sub">Assistant IA Djezzy</div>
               </div>
             </div>
 
@@ -466,14 +470,14 @@ export default function App() {
             </div>
 
             <div className="h-right">
-              <span className="h-badge">
+              {/* <span className="h-badge">
                 {historyLen} échange(s)
-              </span>
-
+              </span> */}
+{/* 
               <div id="status-wrap">
                 <div id="status-dot" className={dot}></div>
                 <span id="status-txt">{status}</span>
-              </div>
+              </div> */}
 
               <button
                 className={`h-btn sound-btn ${isMuted ? 'muted' : ''}`}
@@ -532,19 +536,19 @@ export default function App() {
               </span>
 
               <div className="ch-actions">
-                <button
+                {/* <button
                   className="sm-btn new"
                   onClick={newChat}
                 >
                   ＋ NOUVEAU
-                </button>
+                </button> */}
 
-                {/* <button
+                <button
                   className="sm-btn"
                   onClick={resetConversation}
                 >
-                  ↺ RESET
-                </button> */}
+                  ↺ Nouveau chat
+                </button>
               </div>
             </div>
 
