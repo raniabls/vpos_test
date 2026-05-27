@@ -17,20 +17,6 @@ export default function RobotCanvas({ speaking }) {
     let mouthOpenTarget = 0
     let mouthPhase = 0
 
-    function roundRect(x, y, w, h, r) {
-      ctx.beginPath()
-      ctx.moveTo(x + r, y)
-      ctx.lineTo(x + w - r, y)
-      ctx.quadraticCurveTo(x + w, y, x + w, y + r)
-      ctx.lineTo(x + w, y + h - r)
-      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h)
-      ctx.lineTo(x + r, y + h)
-      ctx.quadraticCurveTo(x, y + h, x, y + h - r)
-      ctx.lineTo(x, y + r)
-      ctx.quadraticCurveTo(x, y, x + r, y)
-      ctx.closePath()
-    }
-
     function drawShadow(cx) {
       ctx.save()
       const g = ctx.createRadialGradient(cx, 492, 20, cx, 492, 110)
@@ -135,7 +121,6 @@ export default function RobotCanvas({ speaking }) {
       const y = cy + 6
 
       ctx.save()
-
       ctx.shadowColor = 'rgba(0,0,0,0.12)'
       ctx.shadowBlur = 10
       ctx.shadowOffsetY = 4
@@ -144,6 +129,7 @@ export default function RobotCanvas({ speaking }) {
       red.addColorStop(0, '#ff5047')
       red.addColorStop(0.45, '#ef1616')
       red.addColorStop(1, '#c70707')
+
       ctx.fillStyle = red
       ctx.beginPath()
       ctx.ellipse(x, y, 34, 46, 0, 0, Math.PI * 2)
@@ -153,6 +139,7 @@ export default function RobotCanvas({ speaking }) {
       const wg = ctx.createRadialGradient(whiteX - side * 4, y - 4, 0, whiteX, y, 20)
       wg.addColorStop(0, '#ffffff')
       wg.addColorStop(1, '#e9e9ee')
+
       ctx.fillStyle = wg
       ctx.beginPath()
       ctx.ellipse(whiteX, y, 9, 36, 0, 0, Math.PI * 2)
@@ -168,8 +155,8 @@ export default function RobotCanvas({ speaking }) {
       face.addColorStop(0, '#141416')
       face.addColorStop(0.5, '#0e0e11')
       face.addColorStop(1, '#17171b')
-      ctx.fillStyle = face
 
+      ctx.fillStyle = face
       ctx.beginPath()
       ctx.moveTo(cx - 106, cy - 62)
       ctx.quadraticCurveTo(cx - 92, cy - 78, cx - 68, cy - 78)
@@ -197,7 +184,6 @@ export default function RobotCanvas({ speaking }) {
 
     function drawEye(ex, ey) {
       ctx.save()
-
       ctx.strokeStyle = '#ffffff'
       ctx.lineWidth = 6
 
@@ -230,109 +216,68 @@ export default function RobotCanvas({ speaking }) {
       ctx.restore()
     }
 
-function drawMouth(cx, cy) {
-  const m = mouthOpenCurrent;
+    function drawMouth(cx, cy) {
+      const m = mouthOpenCurrent
 
-  /* POSITION */
-  const mx = cx;
-  const my = cy - 8;
+      const mx = cx
+      const my = cy - 5
 
-  /* SIZE */
-  const w = 14 + m * 10;
-  const hB = m * 12;
-  const hT = m * 3;
+      const w = 17 + m * 8
+      const open = m * 9
 
-  ctx.save();
+      ctx.save()
 
-  /* INSIDE MOUTH */
-  if (m > 0.03) {
-    ctx.beginPath();
+      ctx.lineCap = 'round'
+      ctx.lineJoin = 'round'
 
-    ctx.moveTo(mx - w, my);
+      if (m > 0.04) {
+        ctx.fillStyle = '#8f1111'
+        ctx.beginPath()
+        ctx.moveTo(mx - w, my)
+        ctx.bezierCurveTo(
+          mx - w * 0.55,
+          my + open,
+          mx + w * 0.55,
+          my + open,
+          mx + w,
+          my
+        )
+        ctx.bezierCurveTo(
+          mx + w * 0.55,
+          my + 2,
+          mx - w * 0.55,
+          my + 2,
+          mx - w,
+          my
+        )
+        ctx.closePath()
+        ctx.fill()
+      }
 
-    ctx.bezierCurveTo(
-      mx - w * 0.5,
-      my + hB,
-      mx + w * 0.5,
-      my + hB,
-      mx + w,
-      my
-    );
+      const line = ctx.createLinearGradient(mx - w, my, mx + w, my)
+      line.addColorStop(0, '#cfcfcf')
+      line.addColorStop(0.5, '#ffffff')
+      line.addColorStop(1, '#cfcfcf')
 
-    ctx.bezierCurveTo(
-      mx + w * 0.5,
-      my - hT,
-      mx - w * 0.5,
-      my - hT,
-      mx - w,
-      my
-    );
+      ctx.strokeStyle = line
+      ctx.lineWidth = 3.2
 
-    ctx.closePath();
+      ctx.beginPath()
+      ctx.moveTo(mx - w, my)
 
-    const bg = ctx.createRadialGradient(
-      mx,
-      my + hB * 0.3,
-      0,
-      mx,
-      my + hB,
-      w
-    );
+      ctx.bezierCurveTo(
+        mx - w * 0.55,
+        my + 8 + open * 0.35,
+        mx + w * 0.55,
+        my + 8 + open * 0.35,
+        mx + w,
+        my
+      )
 
-    bg.addColorStop(0, '#A41414');
-    bg.addColorStop(1, '#A41414');
+      ctx.stroke()
 
-    ctx.fillStyle = bg;
-    ctx.fill();
-  }
-
-  /* MAIN WHITE LINE */
-  const line = ctx.createLinearGradient(mx - w, my, mx + w, my);
-
-  line.addColorStop(0, '#d9d9d9');
-  line.addColorStop(0.5, '#ffffff');
-  line.addColorStop(1, '#d9d9d9');
-
-  ctx.strokeStyle = line;
-  ctx.lineWidth = 3;
-  ctx.lineCap = 'round';
-
-  ctx.beginPath();
-
-ctx.moveTo(mx - w, my - 4);
-
-ctx.bezierCurveTo(
-  mx - w * 0.5,
-  my + hB * 1.1,
-  mx + w * 0.5,
-  my + hB * 1.1,
-  mx + w,
-  my - 4
-);
-
-  ctx.stroke();
-
-  /* TOP HIGHLIGHT */
-  ctx.strokeStyle = 'rgba(210,210,210,0.9)';
-  ctx.lineWidth = 2;
-
-  ctx.beginPath();
-
-  ctx.moveTo(mx - w + 2, my - 1);
-
-  ctx.bezierCurveTo(
-    mx - w * 0.5,
-    my - 3 + m * 2,
-    mx + w * 0.5,
-    my - 3 + m * 2,
-    mx + w - 2,
-    my - 1
-  );
-
-  ctx.stroke();
-
-  ctx.restore();
-}
+      ctx.restore()
+    }
 
     function drawRobot() {
       ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -382,6 +327,7 @@ ctx.bezierCurveTo(
     }
 
     animate()
+
     return () => cancelAnimationFrame(raf)
   }, [speaking])
 
