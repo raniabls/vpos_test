@@ -220,61 +220,89 @@ export default function RobotCanvas({ speaking }) {
       const m = mouthOpenCurrent
 
       const mx = cx
-      const my = cy - 5
+      const my = cy - 4
 
-      const w = 17 + m * 8
-      const open = m * 9
+      const w = 18 + m * 10
+      const gap = m * 13
 
       ctx.save()
-
       ctx.lineCap = 'round'
       ctx.lineJoin = 'round'
 
-      if (m > 0.04) {
-        ctx.fillStyle = '#8f1111'
+      const lip = ctx.createLinearGradient(mx - w, my, mx + w, my)
+      lip.addColorStop(0, '#cfcfcf')
+      lip.addColorStop(0.5, '#ffffff')
+      lip.addColorStop(1, '#cfcfcf')
+
+      if (m > 0.05) {
+        ctx.fillStyle = '#9f1515'
         ctx.beginPath()
         ctx.moveTo(mx - w, my)
         ctx.bezierCurveTo(
           mx - w * 0.55,
-          my + open,
+          my - gap * 0.28,
           mx + w * 0.55,
-          my + open,
+          my - gap * 0.28,
           mx + w,
           my
         )
         ctx.bezierCurveTo(
           mx + w * 0.55,
-          my + 2,
+          my + gap,
           mx - w * 0.55,
-          my + 2,
+          my + gap,
           mx - w,
           my
         )
         ctx.closePath()
         ctx.fill()
+
+        ctx.fillStyle = 'rgba(60,0,0,0.35)'
+        ctx.beginPath()
+        ctx.ellipse(mx, my + gap * 0.45, w * 0.45, gap * 0.28, 0, 0, Math.PI * 2)
+        ctx.fill()
       }
 
-      const line = ctx.createLinearGradient(mx - w, my, mx + w, my)
-      line.addColorStop(0, '#cfcfcf')
-      line.addColorStop(0.5, '#ffffff')
-      line.addColorStop(1, '#cfcfcf')
-
-      ctx.strokeStyle = line
+      ctx.strokeStyle = lip
       ctx.lineWidth = 3.2
 
       ctx.beginPath()
       ctx.moveTo(mx - w, my)
-
       ctx.bezierCurveTo(
         mx - w * 0.55,
-        my + 8 + open * 0.35,
+        my - gap * 0.28,
         mx + w * 0.55,
-        my + 8 + open * 0.35,
+        my - gap * 0.28,
         mx + w,
         my
       )
-
       ctx.stroke()
+
+      ctx.beginPath()
+      ctx.moveTo(mx - w, my)
+      ctx.bezierCurveTo(
+        mx - w * 0.55,
+        my + 7 + gap,
+        mx + w * 0.55,
+        my + 7 + gap,
+        mx + w,
+        my
+      )
+      ctx.stroke()
+
+      if (m <= 0.05) {
+        ctx.beginPath()
+        ctx.moveTo(mx - w, my)
+        ctx.bezierCurveTo(
+          mx - w * 0.55,
+          my + 7,
+          mx + w * 0.55,
+          my + 7,
+          mx + w,
+          my
+        )
+        ctx.stroke()
+      }
 
       ctx.restore()
     }
@@ -313,15 +341,15 @@ export default function RobotCanvas({ speaking }) {
       }
 
       if (speaking) {
-        mouthPhase += 0.2
-        mouthOpenTarget = 0.5 + Math.sin(mouthPhase) * 0.6
-        mouthOpenTarget = Math.max(0.1, Math.min(1.2, mouthOpenTarget))
+        mouthPhase += 0.22
+        mouthOpenTarget = 0.65 + Math.sin(mouthPhase) * 0.55
+        mouthOpenTarget = Math.max(0.12, Math.min(1.25, mouthOpenTarget))
       } else {
         mouthOpenTarget = 0
         mouthPhase = 0
       }
 
-      mouthOpenCurrent += (mouthOpenTarget - mouthOpenCurrent) * 0.1
+      mouthOpenCurrent += (mouthOpenTarget - mouthOpenCurrent) * 0.14
 
       drawRobot()
     }

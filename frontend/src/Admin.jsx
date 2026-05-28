@@ -3,9 +3,9 @@ import './Admin.css';
 import { apiFetch } from './api.js';
 
 const DATA_TYPES = [
-  { key: 'offers', label: 'Offres', icon: '📦' },
-  { key: 'faq', label: 'FAQ', icon: '❓' },
-  { key: 'services', label: 'Services', icon: '🛠️' }
+  { key: 'offers', label: 'Offres', icon: '📦', endpoint: 'offers', defaultCategory: 'general' },
+  { key: 'faqs', label: 'FAQ', icon: '❓', endpoint: 'faqs', defaultCategory: 'faq' },
+  { key: 'services', label: 'Services', icon: '🛠️', endpoint: 'services', defaultCategory: 'service' }
 ];
 
 export default function Admin() {
@@ -20,24 +20,39 @@ export default function Admin() {
   const [itemFeedback, setItemFeedback] = useState({});
   const [busyItem, setBusyItem] = useState(null);
   const [promptBusy, setPromptBusy] = useState(false);
+  const [addBusy, setAddBusy] = useState(false);
+  const [newItem, setNewItem] = useState({ content: '', category: 'general' });
+
+  const activeTypeInfo = DATA_TYPES.find(t => t.key === activeType) || DATA_TYPES[0];
 
   function itemKey(item) {
     return `${item.table}-${item.id}`;
+  }
+
+  function normalizeList(list, table) {
+    const typeInfo = DATA_TYPES.find(t => t.key === table);
+    return (list || []).map(item => ({
+      ...item,
+      table,
+      type: table,
+      type_label: typeInfo?.label || table,
+      category: item.category || typeInfo?.defaultCategory || 'general',
+      is_active: item.is_active !== false
+    }));
   }
 
   async function loadData() {
     setLoading(true);
     try {
       const d = await apiFetch('/admin/data');
-      const loadedItems = d.items || d.data || d.offers || [];
 
-      const normalizedItems = loadedItems.map(item => ({
-        ...item,
-        table: item.table || item.type || 'offers',
-        type: item.type || item.table || 'offers'
-      }));
+      const loadedItems = [
+        ...normalizeList(d.offers, 'offers'),
+        ...normalizeList(d.faqs, 'faqs'),
+        ...normalizeList(d.services, 'services')
+      ];
 
-      setItems(normalizedItems);
+      setItems(loadedItems);
       setPrompt(d.prompt || '');
     } finally {
       setLoading(false);
@@ -45,8 +60,12 @@ export default function Admin() {
   }
 
   useEffect(() => {
-    loadData().catch(e => showToast(e.message, true));
+    loadData().catch(e => showToast(e.message || 'Erreur chargement admin', true));
   }, []);
+
+  useEffect(() => {
+    setNewItem({ content: '', category: activeTypeInfo.defaultCategory || 'general' });
+  }, [activeType]);
 
   function showToast(msg, error = false) {
     setToast({ msg, error });
@@ -90,13 +109,13 @@ export default function Admin() {
     const grouped = {};
 
     itemsByType.forEach(item => {
-      const cat = item.category || activeType;
+      const cat = item.category || activeTypeInfo.defaultCategory || 'general';
       if (!grouped[cat]) grouped[cat] = [];
       grouped[cat].push(item);
     });
 
     return grouped;
-  }, [itemsByType, activeType]);
+  }, [itemsByType, activeTypeInfo.defaultCategory]);
 
   const categoryList = useMemo(() => {
     return Object.keys(categories).sort();
@@ -150,6 +169,34 @@ export default function Admin() {
     }
   }
 
+  async function addItem() {
+    if (!newItem.content.trim()) {
+      return showToast('Contenu vide !', true);
+    }
+
+    setAddBusy(true);
+    try {
+      const d = await apiFetch(`/admin/${activeTypeInfo.endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: newItem.content.trim(),
+          category: newItem.category.trim() || activeTypeInfo.defaultCategory || 'general'
+        })
+      });
+
+      if (d.status === 'ok') {
+        showToast(`✅ ${activeTypeInfo.label} ajouté(e)`);
+        setNewItem({ content: '', category: activeTypeInfo.defaultCategory || 'general' });
+        await loadData();
+      }
+    } catch (e) {
+      showToast(e.message || 'Erreur ajout', true);
+    } finally {
+      setAddBusy(false);
+    }
+  }
+
   async function deleteItem(item) {
     if (!confirm('Supprimer cet élément ?')) return;
 
@@ -157,19 +204,20 @@ export default function Admin() {
     setBusyItem(key);
 
     try {
-      const d = await apiFetch(`/admin/items/${item.table}/${item.id}`, {
+      const typeInfo = DATA_TYPES.find(t => t.key === item.table);
+      const d = await apiFetch(`/admin/${typeInfo.endpoint}/${item.id}`, {
         method: 'DELETE'
       });
 
       if (d.status === 'ok') {
         markItem(item, 'Supprimé ✅', 'danger');
-        showToast('✅ Élément supprimé de PostgreSQL et ChromaDB');
+        showToast('✅ Élément supprimé et index reconstruit');
 
         setTimeout(() => {
           setItems(prev =>
             prev.filter(x => !(x.id === item.id && x.table === item.table))
           );
-        }, 1200);
+        }, 500);
       }
     } catch (e) {
       showToast(e.message || 'Erreur suppression', true);
@@ -183,7 +231,8 @@ export default function Admin() {
     setBusyItem(key);
 
     try {
-      const d = await apiFetch(`/admin/items/${item.table}/${item.id}`, {
+      const typeInfo = DATA_TYPES.find(t => t.key === item.table);
+      const d = await apiFetch(`/admin/${typeInfo.endpoint}/${item.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_active: newState })
@@ -195,7 +244,7 @@ export default function Admin() {
           newState ? 'Activé ✅' : 'Désactivé ⛔',
           newState ? 'success' : 'warning'
         );
-        showToast(newState ? '✅ Élément activé dans la BDD' : '⛔ Élément désactivé dans la BDD');
+        showToast(newState ? '✅ Élément activé' : '⛔ Élément désactivé');
         await loadData();
       }
     } catch (e) {
@@ -214,12 +263,13 @@ export default function Admin() {
     setBusyItem(key);
 
     try {
-      const d = await apiFetch(`/admin/items/${edit.table}/${edit.id}`, {
+      const typeInfo = DATA_TYPES.find(t => t.key === edit.table);
+      const d = await apiFetch(`/admin/${typeInfo.endpoint}/${edit.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           content: edit.content.trim(),
-          category: edit.category || edit.table,
+          category: edit.category || typeInfo.defaultCategory || 'general',
           is_active: edit.is_active
         })
       });
@@ -228,7 +278,7 @@ export default function Admin() {
         const editedItem = { ...edit };
         setEdit(null);
         markItem(editedItem, 'Modifié ✅', 'success');
-        showToast('✅ Élément modifié dans PostgreSQL et ChromaDB');
+        showToast('✅ Élément modifié et index reconstruit');
         await loadData();
       }
     } catch (e) {
@@ -237,8 +287,6 @@ export default function Admin() {
       setBusyItem(null);
     }
   }
-
-  const activeTypeInfo = DATA_TYPES.find(t => t.key === activeType) || DATA_TYPES[0];
 
   return (
     <>
@@ -257,9 +305,7 @@ export default function Admin() {
       <div className="container">
         <div className="admin-title-block">
           <h1>Base de connaissances Izzy</h1>
-          <p>
-            Gestion du prompt, des offres, des FAQ et des services utilisés par le RAG.
-          </p>
+          <p>Gestion du prompt, des offres, des FAQ et des services utilisés par le RAG.</p>
         </div>
 
         <div className="section">
@@ -337,6 +383,49 @@ export default function Admin() {
         <div className="section">
           <div className="section-header">
             <span className="section-title">
+              <span>●</span> AJOUTER : {activeTypeInfo.icon} {activeTypeInfo.label.toUpperCase()}
+            </span>
+
+            {/* <button
+              className="btn btn-red btn-sm"
+              onClick={addItem}
+              disabled={addBusy}
+            >
+              {addBusy ? 'AJOUT...' : 'AJOUTER'}
+            </button> */}
+          </div>
+
+          <div className="section-body">
+            <div className="offer-form">
+              <textarea
+                className="form-input"
+                style={{ minHeight: 70, resize: 'vertical' }}
+                value={newItem.content}
+                onChange={e => setNewItem({ ...newItem, content: e.target.value })}
+                placeholder={`Contenu ${activeTypeInfo.label.toLowerCase()}...`}
+              />
+
+              <input
+                className="form-input"
+                value={newItem.category}
+                onChange={e => setNewItem({ ...newItem, category: e.target.value })}
+                placeholder="Catégorie"
+              />
+
+              <button
+                className="btn btn-red"
+                onClick={addItem}
+                disabled={addBusy}
+              >
+                {addBusy ? 'TRAITEMENT...' : 'AJOUTER'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="section">
+          <div className="section-header">
+            <span className="section-title">
               <span>●</span> {activeTypeInfo.icon} {activeTypeInfo.label.toUpperCase()}
             </span>
 
@@ -389,7 +478,7 @@ export default function Admin() {
                       <div className="data-card-top">
                         <div>
                           <span className="data-id">#{item.id}</span>
-                          <span className="cat-pill">{item.type_label || activeTypeInfo.label}</span>{' '}
+                          <span className="cat-pill">{item.type_label}</span>{' '}
                           <span className="cat-pill">{item.category}</span>
                         </div>
 
@@ -401,7 +490,7 @@ export default function Admin() {
 
                           {isBusy && (
                             <span className="inline-feedback loading">
-                              Traitement... reconstruction ChromaDB
+                              Traitement... reconstruction index
                             </span>
                           )}
 
@@ -506,7 +595,7 @@ export default function Admin() {
 
           {busyItem === (edit ? itemKey(edit) : null) && (
             <div className="modal-processing">
-              ⏳ Modification en cours... PostgreSQL est mis à jour puis ChromaDB est reconstruit.
+              ⏳ Modification en cours... PostgreSQL est mis à jour puis l'index est reconstruit.
             </div>
           )}
 

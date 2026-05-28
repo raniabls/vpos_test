@@ -22,10 +22,75 @@ export default function App() {
     return localStorage.getItem('izzy_muted') === 'true';
   });
 
+  const [loading, setLoading] = useState(true);
+  const [loadPct, setLoadPct] = useState(0);
+  const [loadText, setLoadText] = useState('INITIALISATION');
+
+  const [chatHidden, setChatHidden] = useState(false);
+  const [status, setStatus] = useState('Chargement...');
+  const [dot, setDot] = useState('');
+  const [lang, setLang] = useState(() => localStorage.getItem('izzy_lang') || 'fr');
+  const [historyLen, setHistoryLen] = useState(0);
+
+  const [messages, setMessages] = useState([
+    {
+      role: 'izzy',
+      text: "Bonjour ! Je suis Izzy Comment puis-je vous aider aujourd'hui ?",
+    },
+  ]);
+
+  const [vocalInput, setVocalInput] = useState('');
+  const [chatInput, setChatInput] = useState('');
+
+  const [busy, setBusy] = useState(false);
+  const [speaking, setSpeakingState] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [detecting, setDetecting] = useState(false);
+
+  function detectLanguage(text) {
+    const clean = text.toLowerCase().trim();
+
+    if (/[\u0600-\u06FF]/.test(clean)) return 'ar';
+
+    const enWords = [
+      'hello', 'hi', 'hey', 'offer', 'best', 'price', 'internet',
+      'call', 'calls', 'sms', 'data', 'how', 'what', 'why',
+      'thanks', 'thank you', 'please', 'good', 'morning'
+    ];
+
+    const frWords = [
+      'bonjour', 'salut', 'offre', 'meilleure', 'prix', 'internet',
+      'appel', 'appels', 'forfait', 'combien', 'comment', 'quoi',
+      'merci', 'svp', 's’il', 'plait', 'djezzy'
+    ];
+
+    let enScore = 0;
+    let frScore = 0;
+
+    enWords.forEach(w => {
+      if (clean.includes(w)) enScore++;
+    });
+
+    frWords.forEach(w => {
+      if (clean.includes(w)) frScore++;
+    });
+
+    if (enScore > frScore) return 'en';
+    if (frScore > enScore) return 'fr';
+
+    return lang;
+  }
+
+  function changeLang(newLang) {
+    setLang(newLang);
+    localStorage.setItem('izzy_lang', newLang);
+  }
+
   const toggleMute = () => {
     const newMuted = !isMuted;
     setIsMuted(newMuted);
     localStorage.setItem('izzy_muted', String(newMuted));
+
     if (currentAudioRef.current) {
       currentAudioRef.current.muted = newMuted;
     }
@@ -44,31 +109,6 @@ export default function App() {
     setDot('ready');
     setStatus('Prête');
   };
-
-  const [loading, setLoading] = useState(true);
-  const [loadPct, setLoadPct] = useState(0);
-  const [loadText, setLoadText] = useState('INITIALISATION');
-
-  const [chatHidden, setChatHidden] = useState(false);
-  const [status, setStatus] = useState('Chargement...');
-  const [dot, setDot] = useState('');
-  const [lang, setLang] = useState('fr');
-  const [historyLen, setHistoryLen] = useState(0);
-
-  const [messages, setMessages] = useState([
-    {
-      role: 'izzy',
-      text: "Bonjour ! Je suis Izzy Comment puis-je vous aider aujourd'hui ?",
-    },
-  ]);
-
-  const [vocalInput, setVocalInput] = useState('');
-  const [chatInput, setChatInput] = useState('');
-
-  const [busy, setBusy] = useState(false);
-  const [speaking, setSpeakingState] = useState(false);
-  const [listening, setListening] = useState(false);
-  const [detecting, setDetecting] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('izzy_session', sessionRef.current);
@@ -134,18 +174,22 @@ export default function App() {
     const question = q.trim();
     if (!question) return;
 
-    // Interrompre immédiatement l'audio en cours.
     stopCurrentAudio();
 
-    // Annuler l'ancien fetch si une ancienne requête est encore en cours.
     if (requestAbortRef.current) {
       requestAbortRef.current.abort();
+    }
+
+    const detectedLang = detectLanguage(question);
+    const finalLang = detectedLang || lang;
+
+    if (finalLang !== lang) {
+      changeLang(finalLang);
     }
 
     const controller = new AbortController();
     requestAbortRef.current = controller;
 
-    // ID de requête : permet d'ignorer toute ancienne réponse arrivée en retard.
     const runId = askRunRef.current + 1;
     askRunRef.current = runId;
 
@@ -161,15 +205,21 @@ export default function App() {
         signal: controller.signal,
         body: JSON.stringify({
           question,
+          lang: finalLang,
           session_id: sessionRef.current,
         }),
       });
 
-      // Si une nouvelle question a été envoyée entre temps, on ignore cette ancienne réponse.
       if (runId !== askRunRef.current) return;
 
       addMsg(d.answer, 'izzy');
-      setLang(d.lang || 'fr');
+
+      if (d.lang) {
+        changeLang(d.lang);
+      } else {
+        changeLang(finalLang);
+      }
+
       setHistoryLen(d.history_len || 0);
 
       if (d.audio_url) {
@@ -241,24 +291,18 @@ export default function App() {
   }
 
   function startNewLocalConversation() {
-    // Stopper l'audio en cours.
     stopCurrentAudio();
 
-    // Annuler l'ancienne requête si elle est encore en cours.
     if (requestAbortRef.current) {
       requestAbortRef.current.abort();
       requestAbortRef.current = null;
     }
 
-    // Empêche une ancienne réponse arrivée en retard de s'afficher.
     askRunRef.current += 1;
 
-    // Nouvelle session : le backend ne récupère pas l'ancien historique.
-    // IMPORTANT : on ne fait PAS appel à /reset, donc rien n'est supprimé de PostgreSQL.
     sessionRef.current = crypto.randomUUID();
     localStorage.setItem('izzy_session', sessionRef.current);
 
-    // Vider uniquement l'affichage frontend.
     setMessages([
       {
         role: 'izzy',
@@ -269,7 +313,7 @@ export default function App() {
     setHistoryLen(0);
     setVocalInput('');
     setChatInput('');
-    setLang('fr');
+    changeLang('fr');
     setBusy(false);
     setSpeakingState(false);
     setListening(false);
@@ -280,18 +324,6 @@ export default function App() {
 
   function resetConversation() {
     startNewLocalConversation();
-  }
-
-  function newChat() {
-    startNewLocalConversation();
-  }
-
-  function sendVocal() {
-    const q = vocalInput.trim();
-    if (!q) return;
-
-    setVocalInput('');
-    askIzzy(q);
   }
 
   function sendChat() {
@@ -328,7 +360,6 @@ export default function App() {
       alert('Accès micro refusé.');
       return;
     }
-    
 
     const mediaRecorder = new MediaRecorder(streamRef.current);
     const audioContext = new AudioContext();
@@ -342,39 +373,39 @@ export default function App() {
     const dataArray = new Uint8Array(analyser.fftSize);
 
     let silenceStart = null;
-    const silenceDelay = 5000; // 5 SEC
+    const silenceDelay = 5000;
     const silenceThreshold = 8;
 
     function detectSilence() {
-     if (mediaRecorder.state === 'inactive') return;
+      if (mediaRecorder.state === 'inactive') return;
 
       analyser.getByteTimeDomainData(dataArray);
 
-     let max = 0;
+      let max = 0;
 
-     for (let i = 0; i < dataArray.length; i++) {
-      const v = Math.abs(dataArray[i] - 128);
-
-      if (v > max) max = v;
-     }
-  
-     if (max < silenceThreshold) {
-      if (!silenceStart) {
-      silenceStart = Date.now();
+      for (let i = 0; i < dataArray.length; i++) {
+        const v = Math.abs(dataArray[i] - 128);
+        if (v > max) max = v;
       }
 
-      const silenceTime = Date.now() - silenceStart;
+      if (max < silenceThreshold) {
+        if (!silenceStart) {
+          silenceStart = Date.now();
+        }
 
-       if (silenceTime > silenceDelay) {
-        mediaRecorder.stop();
-        return;
+        const silenceTime = Date.now() - silenceStart;
+
+        if (silenceTime > silenceDelay) {
+          mediaRecorder.stop();
+          return;
+        }
+      } else {
+        silenceStart = null;
       }
-     } else {
-       silenceStart = null;
-     } 
 
-     requestAnimationFrame(detectSilence);
-    }   
+      requestAnimationFrame(detectSilence);
+    }
+
     recorderRef.current = mediaRecorder;
     chunksRef.current = [];
 
@@ -409,6 +440,9 @@ export default function App() {
           setTimeout(() => setStatus('Prête'), 2500);
           return;
         }
+
+        const detectedLang = detectLanguage(d.text);
+        changeLang(detectedLang);
 
         setVocalInput(d.text);
         setStatus('Prête');
@@ -459,30 +493,24 @@ export default function App() {
 
             <div className="h-center">
               {['fr', 'ar', 'en'].map(l => (
-                <span
+                <button
                   key={l}
+                  type="button"
                   className={'lang-tag ' + (lang === l ? 'active' : '')}
                   id={`lang-${l}`}
+                  onClick={() => changeLang(l)}
+                  title={`Changer la langue vers ${l.toUpperCase()}`}
                 >
                   {l.toUpperCase()}
-                </span>
+                </button>
               ))}
             </div>
 
             <div className="h-right">
-              {/* <span className="h-badge">
-                {historyLen} échange(s)
-              </span> */}
-{/* 
-              <div id="status-wrap">
-                <div id="status-dot" className={dot}></div>
-                <span id="status-txt">{status}</span>
-              </div> */}
-
               <button
                 className={`h-btn sound-btn ${isMuted ? 'muted' : ''}`}
                 onClick={toggleMute}
-                title={isMuted ? "Activer le son" : "Désactiver le son"}
+                title={isMuted ? 'Activer le son' : 'Désactiver le son'}
               >
                 {isMuted ? (
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -507,27 +535,27 @@ export default function App() {
             </div>
           </header>
 
-<main id="avatar-zone">
-  <div className="robot-wrapper">
-    <RobotCanvas
-      speaking={speaking}
-      robotRef={robot}
-    />
+          <main id="avatar-zone">
+            <div className="robot-wrapper">
+              <RobotCanvas
+                speaking={speaking}
+                robotRef={robot}
+              />
 
-    {chatHidden && (
-      <button
-        className={
-          'avatar-talk-btn ' +
-          (listening ? 'listening ' : '') +
-          (detecting ? 'detecting' : '')
-        }
-        onClick={toggleMic}
-      >
-        🎙
-      </button>
-    )}
-  </div>
-</main>
+              {chatHidden && (
+                <button
+                  className={
+                    'avatar-talk-btn ' +
+                    (listening ? 'listening ' : '') +
+                    (detecting ? 'detecting' : '')
+                  }
+                  onClick={toggleMic}
+                >
+                  🎙
+                </button>
+              )}
+            </div>
+          </main>
 
           <aside id="chat-zone">
             <div id="chat-head">
@@ -536,13 +564,6 @@ export default function App() {
               </span>
 
               <div className="ch-actions">
-                {/* <button
-                  className="sm-btn new"
-                  onClick={newChat}
-                >
-                  ＋ NOUVEAU
-                </button> */}
-
                 <button
                   className="sm-btn"
                   onClick={resetConversation}
