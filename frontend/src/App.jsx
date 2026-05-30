@@ -43,6 +43,7 @@ export default function App() {
   const [chatInput, setChatInput] = useState('');
 
   const [busy, setBusy] = useState(false);
+  const [thinking, setThinking] = useState(false);
   const [speaking, setSpeakingState] = useState(false);
   const [listening, setListening] = useState(false);
   const [detecting, setDetecting] = useState(false);
@@ -197,6 +198,7 @@ export default function App() {
     addMsg(question, 'user');
     setDot('talking');
     setStatus('Réflexion...');
+    setThinking(true);
 
     try {
       const d = await apiFetch('/ask', {
@@ -212,6 +214,7 @@ export default function App() {
 
       if (runId !== askRunRef.current) return;
 
+      setThinking(false);
       addMsg(d.answer, 'izzy');
 
       if (d.lang) {
@@ -282,6 +285,7 @@ export default function App() {
       robot.current.setSpeaking(false);
       setRobotSpeaking(false);
       setBusy(false);
+      setThinking(false);
       addMsg('❌ Erreur : ' + e.message, 'izzy');
     } finally {
       if (requestAbortRef.current === controller) {
@@ -299,6 +303,7 @@ export default function App() {
     }
 
     askRunRef.current += 1;
+    setThinking(false);
 
     sessionRef.current = crypto.randomUUID();
     localStorage.setItem('izzy_session', sessionRef.current);
@@ -306,7 +311,7 @@ export default function App() {
     setMessages([
       {
         role: 'izzy',
-        text: 'Nouveau chat démarré 👋\nComment puis-je vous aider ?',
+        text: 'Nouveau chat démarré. Comment puis-je vous aider ?',
       },
     ]);
 
@@ -584,6 +589,17 @@ export default function App() {
                   ))}
                 </div>
               ))}
+
+              {thinking && (
+                <div className="msg izzy thinking-msg">
+                  <span>Izzy réfléchit</span>
+                  <span className="typing-dots">
+                    <i></i>
+                    <i></i>
+                    <i></i>
+                  </span>
+                </div>
+              )}
 
               <div ref={bottomRef} />
             </div>
