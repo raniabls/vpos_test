@@ -1,13 +1,13 @@
 pays,type_offre,volume_internet_go,appels_recus,appels_vers_djezzy,sms,validite_jours,prix_da
-Espagne,Internet,1 Go,,,,7 jours,1200 DA
-Espagne,Internet & Voix,2 Go,30 minutes appels reçus,120 minutes appels vers Djezzy,20 SMS,30 jours,2000 DA
-Turquie,Internet,2 Go,,,,15 jours,1200 DA
-Turquie,Internet,5 Go,,,,30 jours,3000 DA
-Turquie,Internet & Voix,1 Go,10 minutes appels reçus,30 minutes appels vers Djezzy,10 SMS,7 jours,1000 DA
-Turquie,Internet & Voix,2 Go,30 minutes appels reçus,3 heures appels vers Djezzy,30 SMS,15 jours,2000 DA
-Turquie,Internet & Voix,5 Go,60 minutes appels reçus,8 heures appels vers Djezzy,60 SMS,30 jours,4000 DA
-France,Internet,2 Go,,,,7 jours,1000 DA
-France,Internet,5 Go,,,,30 jours,2000 DA
-France,Internet & Voix,1 Go,10 minutes appels reçus,10 minutes appels vers Djezzy,20 SMS,7 jours,1000 DA
-France,Internet & Voix,2 Go,20 minutes appels reçus,50 minutes appels vers Djezzy,20 SMS,15 jours,2000 DA
-France,Internet & Voix,8 Go,40 minutes appels reçus,30 minutes appels vers Djezzy,40 SMS,30 jours,5000 DA
+Roaming Espagne,Internet,1 Go,,,,7 jours,1200 DA
+Roaming Espagne,Internet & Voix,2 Go,30 minutes appels reçus,120 minutes appels vers Djezzy,20 SMS,30 jours,2000 DA
+Roaming Turquie,Internet,2 Go,,,,15 jours,1200 DA
+Roaming Turquie,Internet,5 Go,,,,30 jours,3000 DA
+Roaming Turquie,Internet & Voix,1 Go,10 minutes appels reçus,30 minutes appels vers Djezzy,10 SMS,7 jours,1000 DA
+Roaming Turquie,Internet & Voix,2 Go,30 minutes appels reçus,3 heures appels vers Djezzy,30 SMS,15 jours,2000 DA
+Roaming France,Internet & Voix,5 Go,60 minutes appels reçus,8 heures appels vers Djezzy,60 SMS,30 jours,4000 DA
+Roaming France,Internet,2 Go,,,,7 jours,1000 DA
+Roaming France,Internet,5 Go,,,,30 jours,2000 DA
+Roaming France,Internet & Voix,1 Go,10 minutes appels reçus,10 minutes appels vers Djezzy,20 SMS,7 jours,1000 DA
+Roaming France,Internet & Voix,2 Go,20 minutes appels reçus,50 minutes appels vers Djezzy,20 SMS,15 jours,2000 DA
+Roaming France,Internet & Voix,8 Go,40 minutes appels reçus,30 minutes appels vers Djezzy,40 SMS,30 jours,5000 DA

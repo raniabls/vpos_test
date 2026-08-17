@@ -308,7 +308,7 @@ export default function Admin() {
           <p>Gestion des offres, des FAQ et des services utilisés par le RAG.</p>
         </div>
 
-        {/* <div className="section">
+        <div className="section">
           <div className="section-header">
             <span className="section-title">
               <span>●</span> PROMPT SYSTÈME
@@ -335,7 +335,7 @@ export default function Admin() {
               <code>{'{context}'}</code> données pertinentes trouvées par le RAG
             </p>
           </div>
-        </div> */}
+        </div>
 
         <div className="stats-row">
           <div className="stat-card">

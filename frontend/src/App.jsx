@@ -9,7 +9,13 @@ export default function App() {
     setListening: () => {},
   });
 
-  const sessionRef = useRef(localStorage.getItem('izzy_session') || crypto.randomUUID());
+  const DEFAULT_MSG = {
+    role: 'izzy',
+    text: "Bonjour ! Je suis Izzy Comment puis-je vous aider aujourd'hui ?",
+  };
+
+  const initialChatId = localStorage.getItem('izzy_current_chat') || localStorage.getItem('izzy_session') || crypto.randomUUID();
+  const sessionRef = useRef(initialChatId);
   const recorderRef = useRef(null);
   const chunksRef = useRef([]);
   const streamRef = useRef(null);
@@ -32,12 +38,46 @@ export default function App() {
   const [lang, setLang] = useState(() => localStorage.getItem('izzy_lang') || 'fr');
   const [historyLen, setHistoryLen] = useState(0);
 
-  const [messages, setMessages] = useState([
-    {
-      role: 'izzy',
-      text: "Bonjour ! Je suis Izzy Comment puis-je vous aider aujourd'hui ?",
-    },
-  ]);
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem('izzy_dark') === 'true';
+  });
+
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    const saved = localStorage.getItem('izzy_sidebar_open');
+    const isMobile = window.innerWidth <= 760;
+
+    if (saved !== null) return saved === 'true' && !isMobile;
+    return !isMobile;
+  });
+
+  const quickQuestions = [
+    'Qui est Djezzy ?',
+    'Quelles sont les offres mensuelles disponibles ?',
+    // 'Comment recharger ma puce Djezzy ?',
+    'Quelle offre internet me conseillez-vous ?',
+  ];
+
+  const [chats, setChats] = useState(() => {
+    try {
+      const saved = localStorage.getItem('izzy_chats');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [currentChatId, setCurrentChatId] = useState(initialChatId);
+
+  const [messages, setMessages] = useState(() => {
+    try {
+      const saved = localStorage.getItem('izzy_chats');
+      const allChats = saved ? JSON.parse(saved) : [];
+      const chat = allChats.find(c => c.id === initialChatId);
+      return chat?.messages?.length ? chat.messages : [DEFAULT_MSG];
+    } catch {
+      return [DEFAULT_MSG];
+    }
+  });
 
   const [vocalInput, setVocalInput] = useState('');
   const [chatInput, setChatInput] = useState('');
@@ -127,8 +167,46 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    localStorage.setItem('izzy_dark', String(darkMode));
+    document.body.classList.toggle('dark-mode', darkMode);
+  }, [darkMode]);
+
+  useEffect(() => {
+    localStorage.setItem('izzy_sidebar_open', String(sidebarOpen));
+  }, [sidebarOpen]);
+
+  useEffect(() => {
+    localStorage.setItem('izzy_session', currentChatId);
+    localStorage.setItem('izzy_current_chat', currentChatId);
+    sessionRef.current = currentChatId;
+  }, [currentChatId]);
+
+  useEffect(() => {
+    setChats(prev => {
+      const titleFromUser = messages.find(m => m.role === 'user')?.text?.slice(0, 32);
+      const title = titleFromUser || 'Nouveau chat';
+
+      const exists = prev.some(c => c.id === currentChatId);
+      const updated = exists
+        ? prev.map(c =>
+            c.id === currentChatId
+              ? { ...c, title: titleFromUser || c.title || title, messages, updatedAt: Date.now() }
+              : c
+          )
+        : [
+            { id: currentChatId, title, messages, updatedAt: Date.now() },
+            ...prev,
+          ];
+
+      updated.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+      localStorage.setItem('izzy_chats', JSON.stringify(updated));
+      return updated;
+    });
+  }, [messages, currentChatId]);
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, thinking]);
 
   function setRobotSpeaking(v) {
     robot.current.setSpeaking(v);
@@ -305,8 +383,11 @@ export default function App() {
     askRunRef.current += 1;
     setThinking(false);
 
-    sessionRef.current = crypto.randomUUID();
-    localStorage.setItem('izzy_session', sessionRef.current);
+    const newId = crypto.randomUUID();
+    sessionRef.current = newId;
+    setCurrentChatId(newId);
+    localStorage.setItem('izzy_session', newId);
+    localStorage.setItem('izzy_current_chat', newId);
 
     setMessages([
       {
@@ -331,12 +412,54 @@ export default function App() {
     startNewLocalConversation();
   }
 
+  function openChat(chat) {
+    stopCurrentAudio();
+
+    if (requestAbortRef.current) {
+      requestAbortRef.current.abort();
+      requestAbortRef.current = null;
+    }
+
+    askRunRef.current += 1;
+    sessionRef.current = chat.id;
+    setCurrentChatId(chat.id);
+    localStorage.setItem('izzy_session', chat.id);
+    localStorage.setItem('izzy_current_chat', chat.id);
+
+    setMessages(chat.messages?.length ? chat.messages : [DEFAULT_MSG]);
+    setThinking(false);
+    setBusy(false);
+    setDot('ready');
+    setStatus('Prête');
+  }
+
+  function deleteChat(e, chatId) {
+    e.stopPropagation();
+
+    const updated = chats.filter(c => c.id !== chatId);
+    setChats(updated);
+    localStorage.setItem('izzy_chats', JSON.stringify(updated));
+
+    if (chatId === currentChatId) {
+      if (updated.length > 0) {
+        openChat(updated[0]);
+      } else {
+        startNewLocalConversation();
+      }
+    }
+  }
+
   function sendChat() {
     const q = chatInput.trim();
     if (!q) return;
 
     setChatInput('');
     askIzzy(q);
+  }
+
+  function askQuickQuestion(question) {
+    setChatInput('');
+    askIzzy(question);
   }
 
   async function toggleMic() {
@@ -485,9 +608,25 @@ export default function App() {
         <div className="corner bl"></div>
         <div className="corner tr"></div>
 
-        <div id="app" className={chatHidden ? 'chat-hidden' : ''}>
+        {sidebarOpen && (
+          <div
+            className="sidebar-overlay"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        <div id="app" className={`${chatHidden ? 'chat-hidden ' : ''}${sidebarOpen ? 'sidebar-open' : 'sidebar-closed'}`}>
           <header id="header">
             <div className="h-brand">
+              <button
+                type="button"
+                className="menu-btn"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                title={sidebarOpen ? 'Fermer la barre latérale' : 'Ouvrir la barre latérale'}
+              >
+                ☰
+              </button>
+
               <div className="h-diamond"></div>
 
               <div>
@@ -539,6 +678,74 @@ export default function App() {
               </button>
             </div>
           </header>
+
+          <nav id="sidebar" className={sidebarOpen ? 'open' : 'closed'}>
+            <div className="side-header">
+              <div className="side-logo">
+                <strong>izzy</strong>
+                <span>DJEZZY جازي</span>
+              </div>
+
+              <button
+                type="button"
+                className="sidebar-close-btn"
+                onClick={() => setSidebarOpen(false)}
+                aria-label="Fermer la barre latérale"
+                title="Fermer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <button className="side-item active" onClick={startNewLocalConversation}>
+              <span>💬</span>
+              Nouveau chat
+            </button>
+
+            <div className="side-section">Questions prêtes</div>
+
+            <div className="quick-questions">
+              {quickQuestions.map(question => (
+                <button
+                  key={question}
+                  type="button"
+                  className="quick-question"
+                  onClick={() => askQuickQuestion(question)}
+                >
+                  {question}
+                </button>
+              ))}
+            </div>
+
+            <div className="side-section">Historique</div>
+
+            <div className="chat-history">
+              {chats.map(chat => (
+                <button
+                  key={chat.id}
+                  className={'history-item ' + (chat.id === currentChatId ? 'selected' : '')}
+                  onClick={() => openChat(chat)}
+                  title={chat.title || 'Chat'}
+                >
+                  <span className="history-title">{chat.title || 'Chat'}</span>
+                  <span
+                    className="delete-chat"
+                    onClick={e => deleteChat(e, chat.id)}
+                    title="Supprimer ce chat"
+                  >
+                    ×
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <div className="side-bottom">
+              <button className="side-item" onClick={() => setDarkMode(!darkMode)}>
+                <span>{darkMode ? '☀️' : '🌙'}</span>
+                {darkMode ? 'Mode clair' : 'Mode sombre'}
+              </button>
+            </div>
+          </nav>
 
           <main id="avatar-zone">
             <div className="robot-wrapper">

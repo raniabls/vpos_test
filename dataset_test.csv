@@ -1,0 +1,30 @@
+question,reponse_attendue,mots_cles_attendus,langue,hors_sujet
+Quel est le prix du forfait Internet 3ayla 15Go ?,"Il existe deux versions : l'offre 3ayla 15Go à 1000 dinars et le pack 3ayla 15Go avec modem 4G à 8500 dinars","1000,8500,15Go,3ayla,modem",fr,False
+Quelle offre Internet 3ayla propose le plus de data ?,L'offre Internet 3ayla 350Go est la plus grande avec 350Go pour 12 mois à 7500 dinars,"350Go,7500,12 mois,3ayla",fr,False
+Quel est le prix du forfait HAYLA BEZAF 1500 ?,Le forfait HAYLA BEZAF 1500 coûte 1500 dinars avec 30Go et appels illimités pendant 30 jours,"1500,30Go,illimité,30 jours",fr,False
+Combien coûte l'offre hebdomadaire 10Go ?,L'offre semaine 10Go coûte 300 dinars avec 50% de remise à 150 dinars à la deuxième souscription,"300,10Go,150,semaine,remise",fr,False
+Quelles offres existent pour moins de 1000 dinars ?,"Il existe plusieurs offres sous les 1000 dinars, comme Student Campuce 800 à 800 dinars, IZZY 500 à 500 dinars, ou HAYLA BEZAF 500 à 500 dinars.","500 DA,800 DA,Student Campuce,IZZY,Hayla Bezaf",fr,False
+Je veux beaucoup d'internet pour longtemps,L'offre Internet 3ayla 350Go pour 12 mois à 7500 dinars est la plus complète,"350Go,12 mois,7500",fr,False
+Dois-je changer ma carte SIM pour la 5G ?,"Si vous avez déjà une USIM, il suffit de signer un nouveau contrat 5G dans un centre de service Djezzy.","USIM,SIM,contract,5G,centre",fr,False
+كم تكلف باقة إنترنت 15 جيجا لمدة شهر ؟,تكلف باقة 15 جيجا 1000 دينار لمدة شهر,"1000,15,Go,جيجا,شهر,دينار",ar,False
+What is the cheapest daily Djezzy plan ?,"The cheapest daily plan is Djezzy Net 300 Mo which costs 30 dinars (or 15 dinars on the second subscription).","30,15,daily,djezzy",en,False
+How much does the HAYLA BEZAF 500 plan cost ?,It costs 500 dinars with 3Go and unlimited calls for 15 days,"500,3Go,15 days",en,False
+Quelle offre Student Campuce propose le plus d'internet ?,L'offre Student Campuce 1600 propose 70Go pour 30 jours,"1600,70Go,30 jours",fr,False
+Who is the president of Algeria ?,I only answer questions related to Djezzy services,"Djezzy,only,services",en,True
+Quelle est la plus grande offre Djezzy Net ?,La plus grande offre Djezzy Net propose un volume important de data de 220 Go pour un mois à 4000 DA.,"220Go,4000,mois,Djezzy Net",fr,False
+Est-ce qu'il y a une remise sur Djezzy Net 60Go ?,"Oui, il y a 50% de remise à la deuxième souscription de l'offre Djezzy Net 60 Go, qui passe à 750 DA.","60Go,remise,50%",fr,False
+Does Student Campuce 150 include WhatsApp ?,Yes it includes WhatsApp and Facebook unlimited for 24 hours,"WhatsApp,Facebook,150",en,False
+Does Djezzy Net offer weekly plans ?,Yes weekly plans like 10Go for 300 dinars exist,"weekly,10Go,300",en,False
+Quel est le prix de l'offre IZZY 50 ?,Elle coûte 50 dinars avec 1Go et appels illimités 24h,"50,1Go,IZZY",fr,False
+Qu'est-ce que l'offre Legend Max ?,Elle offre plusieurs volumes de data avec appels illimités,"illimité,Legend Max,data",fr,False
+Quelle est l'offre Zid journalière la moins chère ?,Elle offre 500Mo et 50 dinars de crédit pour 50 dinars,"500Mo,50,crédit",fr,False
+كم تكلف باقة Djezzy Binatna 4000 ؟,تكلف 4000 دينار مع 100 جيجا إنترنت ومكالمات غير محدودة,"4000,100Go,Binatna",ar,False
+Quelle est l'offre Roaming Hadj et Omra ?,Elle offre 20Go et appels illimités en Arabie Saoudite pour 4000 dinars,"20Go,roaming,4000",fr,False
+e suis étudiant et je veux accéder à la plateforme Dorouscom pour suivre mes cours en ligne sans dépenser trop,Djezzy propose trois offres Dorouscom dédiées à la plateforme d'apprentissage en ligne. L'offre à 500 DA donne 500 Mo pour 30 jours. L'offre à 1000 DA donne 1 Go pour 30 jours. L'offre à 2000 DA donne 2 Go pour 30 jours,"Dorouscom,500,500Mo,1Go,1000,2Go,2000,30 jours,cours,apprentissage",fr,False
+how do I activate VoLTE on my phone ?,VoLTE can be activated for free by dialing *707*13# or by visiting a Djezzy service center. You also need to enable VoLTE in your phone network settings and have a 4G/5G compatible SIM card,"VoLTE,*707*13#,free,4G,settings,SIM",en,False
+comment ne pas apparaître dans l'annuaire Djezzy ?,"Appelez le 709 pour vous inscrire au service Liste Rouge. Les frais sont de 500 DA par an renouvelés automatiquement sauf annulation.","709,annuaire,500 DA,liste rouge",fr,False
+je veux un forfait gaming Djezzy pour une semaine,"Le forfait Gaming Semaine à 1000 DA offre 900 crédits gaming et 1 Go valable 7 jours. Pour 2 semaines c'est 2000 DA avec 2000 crédits et 1 Go valable 15 jours.","gaming,1000 DA,900 crédits,1Go,7 jours",fr,False
+what is the cheapest Djezzy ZID daily plan ?,"The cheapest daily ZID plan costs 50 DA with 500 Mo and unlimited calls to Djezzy and 50 DA credit valid for 1 day. There is also a 1 Go plan at 100 DA with 150 DA credit for 1 day.","ZID,50 DA,500Mo,unlimited,1 day,100 DA,1Go",en,
+ما هو سعر باقة Djezzy ZID الأسبوعية ؟,باقة Djezzy ZID الأسبوعية تكلف 200 دينار مع 2 جيجا إنترنت ومكالمات غير محدودة نحو دجيزي و200 دينار رصيد لمدة 7 أيام,"ZID,200,2go,7,غير محدود",ar,False
+Quelle est l'offre Confort avec le plus de data ?,L'offre Confort 3000 propose 150 Go d'internet appels et SMS illimités vers Djezzy et 6000 DA d'appels nationaux pour 3000 DA par mois,"Confort,3000,150Go,illimité,6000,national",fr,False
+ما هي خيارات الشريحة الثانية في عرض Confort 2000 ؟,عرض Confort 2000 يتيح إضافة شريحة ثانية بـ 10 جيجا مقابل 50 دينار أو 35 جيجا مقابل 150 دينار,"Confort,2000,10Go,الشريحة الثانية,50,35Go,150",ar,False

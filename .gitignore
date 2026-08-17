@@ -1,0 +1,69 @@
+# =========================
+# Environment variables
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# =========================
+# Local databases / vector stores
+# =========================
+chroma_db/
+*.db
+*.sqlite
+*.sqlite3
+
+# =========================
+# Generated / temporary data
+# =========================
+results/
+chat/
+data_normalized/
+
+# =========================
+# Evaluation outputs
+# =========================
+evaluation.txt
+evaluationllama.json
+
+# =========================
+# Jupyter / notebooks
+# =========================
+.ipynb_checkpoints/
+
+# =========================
+# Frontend
+# =========================
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+
+# =========================
+# Logs
+# =========================
+*.log
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# IDE
+# =========================
+.vscode/
+.idea/

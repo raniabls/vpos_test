@@ -5,7 +5,7 @@ Services Complémentaires,Vol de mobile,Blocage du téléphone volé sur tous r�
 Services Complémentaires,Changement carte SIM,Remplacement SIM (perte/panne).,Conserver numéro.,Pièce identité obligatoire.,Agence Djezzy,100 DA SIM + 150 DA activation,Clients Djezzy,Activation rapide
 Services Complémentaires,Numéros utiles,Accès rapide aux services.,"777: client, 700: général, 401: distributeur, 720: offres, 710: crédit, 788: entreprise, 718: pro.",Ligne active,Composer numéro,Selon appel,Clients,
 Services Complémentaires,Service client,Assistance clients particuliers et entreprises.,"Support 24/7, réclamations, infos.",Ligne active,Appeler 777,Selon appel,Clients,
-Services Complémentaires,Menu USSD *777#,Gestion rapide ligne.,"Consulter solde, config SIM, services.",Ligne active,Composer *777#,Gratuit,Clients,
+Services Complémentaires,Menu USSD *777#,Gestion rapide ligne.,"Consulter solde et crédit, config SIM, services.",Ligne active,Composer *777#,Gratuit,Clients,
 Services Complémentaires,Contrôle parental,Service permettant de contrôler l’usage du téléphone des enfants.,"Limiter accès, protéger contenu, sécuriser navigation.",Ligne active + activation service.,Composer *144#,Gratuit,Parents,Protection enfants
 Services Complémentaires,Contrôle parental - étapes souscription,Procédure d’activation.,1: composer *144# 2: choisir contrôle parental 3: configurer mot de passe 4: activer service.,Ligne active,USSD *144#,Gratuit,Parents,
 Services Complémentaires,Contrôle parental - désactivation,Procédure désactivation.,1: composer *144# 2: choisir désactivation 3: entrer mot de passe.,Ligne active,USSD *144#,Gratuit,Parents,

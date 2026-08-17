@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 
 import edge_tts
 import httpx
+import random
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -78,7 +79,56 @@ RERANKER_SEUILS = {
     "en": 0.5,
     "ar": 0.8,   # était implicitement 0.0 — trop permissif
 }
+# ── Réponses small talk par langue ──
+SMALL_TALK_RESPONSES = {
+    "fr": [
+        "Bonjour ! 😊 Je suis Izzy, votre assistante Djezzy. Comment puis-je vous aider aujourd'hui ?",
+        "Bonsoir ! Je suis Izzy, votre assistante Djezzy. Que puis-je faire pour vous ?",
+        "Salut ! Izzy à votre service. Des questions sur nos offres ou services ?",
+    ],
+    "ar": [
+        "مرحباً! أنا إيزي، مساعدتك في دجيزي. كيف يمكنني مساعدتك اليوم؟",
+        "أهلاً وسهلاً! أنا إيزي. بماذا يمكنني خدمتك؟",
+        "السلام عليكم! أنا إيزي من دجيزي. كيف أقدر نساعدك؟",
+    ],
+    "en": [
+        "Hello! I'm Izzy, your Djezzy assistant. How can I help you today?",
+        "Hi there! Izzy here. Any questions about our offers or services?",
+        "Good day! I'm Izzy. What can I do for you?",
+    ]
+}
 
+SMALL_TALK_PATTERNS = {
+    "fr": ["bonjour", "bonsoir", "salut", "hello", "coucou", "hey", "bonne journée",
+           "bonne soirée", "bonne nuit", "comment ça va", "ça va", "merci", "au revoir",
+           "à bientôt", "bonne chance"],
+    "ar": ["مرحبا", "السلام عليكم", "وعليكم السلام", "أهلا", "صباح الخير", "مساء الخير",
+           "كيف حالك", "شكرا", "مع السلامة", "وداعا", "يسلمو", "بالتوفيق", "يعطيك الصحة"],
+    "en": ["hello", "hi", "hey", "good morning", "good evening", "good night",
+           "how are you", "thanks", "thank you", "bye", "goodbye", "see you", "good luck"],
+}
+
+
+"""def supprimer_raisonnement(text: str) -> str:
+    #Qwen QwQ produit un bloc <think>...</think> avant la réponse.
+    #Supprime ce bloc pour ne retourner que la réponse finale propre.
+    # Cas 1 — balises <think>...</think> explicites
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+
+    # Cas 2 — blocs ```think ... ```
+    text = re.sub(r"```think.*?```", "", text, flags=re.DOTALL | re.IGNORECASE)
+
+    # Cas 3 — préfixes textuels courants de Qwen avant la réponse
+    prefixes = [
+        r"^let me (?:think|reason|analyze)[^\n]*\n",
+        r"^thinking[:\s][^\n]*\n",
+        r"^okay[,\s]+(?:so\s+)?(?:let me|i need to)[^\n]*\n",
+        r"^alright[,\s]+(?:let me|i'll)[^\n]*\n",
+    ]
+    for p in prefixes:
+        text = re.sub(p, "", text, flags=re.IGNORECASE | re.MULTILINE)
+
+    return text.strip()"""
 
 # ════════════════════════════════════════════════════════════════════
 #  LIFESPAN
@@ -123,7 +173,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -137,6 +187,7 @@ app.add_middleware(
 class QuestionInput(BaseModel):
     question:   str
     session_id: str
+    lang:        str | None = None
 
 class OfferInput(BaseModel):
     content:  str
@@ -209,6 +260,20 @@ def detect_lang_response(answer: str, lang_question: str) -> str:
 
     return lang_question
 
+def est_small_talk(text: str, lang: str) -> bool:
+    """Détecte si le message est une salutation ou politesse sans demande d'information."""
+    text_lower = text.lower().strip()
+    # Court-circuit : message très court (≤4 mots)
+    if len(text_lower.split()) <= 4:
+        patterns = SMALL_TALK_PATTERNS.get(lang, []) + SMALL_TALK_PATTERNS.get("fr", [])
+        # fullmatch : le message entier doit correspondre au pattern (pas juste le contenir)
+        if any(re.fullmatch(re.escape(p), text_lower) for p in patterns):
+            return True
+    return False
+
+def repondre_small_talk(lang: str) -> str:
+    responses = SMALL_TALK_RESPONSES.get(lang, SMALL_TALK_RESPONSES["fr"])
+    return random.choice(responses)
 
 # ════════════════════════════════════════════════════════════════════
 #  GESTION HISTORIQUE
@@ -314,6 +379,8 @@ Analyse la question et retourne UNIQUEMENT un JSON avec ces champs (null si non 
   "illimite": <true|null>,
   "reseau": <"4g"|"5g"|"3g"|null>,
   "duree_min": <int|null>,
+  "duree_max": <int|null>,
+  "duree_exact": <int|null>,
   "roaming": <true|null>,
   "streaming": <true|null>,
   "exclure_streaming": <true|null>,
@@ -329,7 +396,15 @@ Règles :
 - "illimite": true SEULEMENT si explicitement demandé
 - "exclure_streaming": true UNIQUEMENT si l'utilisateur dit explicitement qu'il ne veut PAS de streaming
 - Prix en DA/dinar/دينار → extraire le nombre entier
-- Durées : "1 mois"=30, "2 mois"=60, "1 semaine"=7
+- Durées : "1 mois" / "mensuel"=30, "2 mois"=60, "1 semaine" / "hebdomadaire"=7, "jour" / "journalier" / "24h"=1
+- Pour les durées exactes (ex: "jour", "1 mois", "semaine"), utilise duree_exact.
+- Pour les durées minimales (ex: "pour longtemps", "plus de 1 mois"), utilise duree_min.
+
+Heuristiques sémantiques intelligentes (si la question est vague mais exprime une intention claire) :
+- "moins de X dinars/DA" -> positionne prix_max = X - 1 (pour exclure strictement le prix X)
+- "beaucoup d'internet" / "max data" / "كثير من الإنترنت" -> positionne data_min = 50.0 (pour cibler les gros forfaits)
+- "pour longtemps" / "long terme" / "طويل" -> positionne duree_min = 90 (pour cibler les offres de 3 mois ou plus)
+- "pas cher" / "petit budget" / "économique" -> positionne prix_max = 1000 (sans prix_exact)
 """
 
 # Extraction contraintes via LLM pour comprendre l’intention
@@ -391,8 +466,13 @@ def construire_filtre(contraintes: dict, collection) -> dict | None:
     if contraintes.get("reseau"):
         conditions.append({"reseau": {"$eq": contraintes["reseau"]}})
 
-    if contraintes.get("duree_min"):
-        conditions.append({"duree_j": {"$gte": contraintes["duree_min"]}})
+    if contraintes.get("duree_exact"):
+        conditions.append({"duree_j": {"$eq": contraintes["duree_exact"]}})
+    else:
+        if contraintes.get("duree_min"):
+            conditions.append({"duree_j": {"$gte": contraintes["duree_min"]}})
+        if contraintes.get("duree_max"):
+            conditions.append({"duree_j": {"$lte": contraintes["duree_max"]}})
 
     if contraintes.get("roaming") is True:
         conditions.append({"roaming": {"$eq": True}})
@@ -424,34 +504,44 @@ def construire_filtre(contraintes: dict, collection) -> dict | None:
 #  SQL SEARCH
 # ════════════════════════════════════════════════════════════════════
 
-def sql_search(contraintes: dict, db: Session, limit: int = 6) -> list[str]:
+def sql_search(contraintes: dict, db: Session, question: str = "", limit: int = 6) -> list[str]:
     if not contraintes:
         return []
     from sqlalchemy import and_
     resultats = []
+    question_lower = question.lower()
     for Model in [Offer, FAQ, Service]:
         try:
             cols = {c.name for c in Model.__table__.columns}
             conditions = [Model.is_active == True]
             if "prix" in cols:
-                if contraintes.get("prix_exact"):
+                if contraintes.get("prix_exact") is not None:
                     conditions.append(Model.prix == contraintes["prix_exact"])
                 else:
-                    if contraintes.get("prix_max"):
+                    if contraintes.get("prix_max") is not None:
                         conditions.append(Model.prix <= contraintes["prix_max"])
-                        conditions.append(Model.prix > 0)
-                    if contraintes.get("prix_min"):
+                        if contraintes["prix_max"] > 0:
+                            conditions.append(Model.prix > 0)
+                    if contraintes.get("prix_min") is not None:
                         conditions.append(Model.prix >= contraintes["prix_min"])
-            if "data_go" in cols and contraintes.get("data_min"):
+            if "data_go" in cols and contraintes.get("data_min") is not None:
                 conditions.append(Model.data_go >= contraintes["data_min"])
-            if "data_go" in cols and contraintes.get("data_max"):
+            if "data_go" in cols and contraintes.get("data_max") is not None:
                 conditions.append(Model.data_go <= contraintes["data_max"])
             if "illimite" in cols and contraintes.get("illimite") is True:
                 conditions.append(Model.illimite == True)
             if "reseau" in cols and contraintes.get("reseau"):
                 conditions.append(Model.reseau == contraintes["reseau"])
-            if "duree_j" in cols and contraintes.get("duree_min"):
-                conditions.append(Model.duree_j >= contraintes["duree_min"])
+            
+            if "duree_j" in cols:
+                if contraintes.get("duree_exact") is not None:
+                    conditions.append(Model.duree_j == contraintes["duree_exact"])
+                else:
+                    if contraintes.get("duree_min") is not None:
+                        conditions.append(Model.duree_j >= contraintes["duree_min"])
+                    if contraintes.get("duree_max") is not None:
+                        conditions.append(Model.duree_j <= contraintes["duree_max"])
+
             if "roaming" in cols and contraintes.get("roaming") is True:
                 conditions.append(Model.roaming == True)
             if "type_offre" in cols:
@@ -467,7 +557,30 @@ def sql_search(contraintes: dict, db: Session, limit: int = 6) -> list[str]:
 
             if len(conditions) == 1:  # seulement is_active → skip
                 continue
-            rows = db.query(Model).filter(and_(*conditions)).limit(limit).all()
+
+            query = db.query(Model).filter(and_(*conditions))
+            
+            # Tri dynamique selon l'intention utilisateur
+            if "prix" in cols:
+                tri_pas_cher = any(w in question_lower for w in ["cher", "cheap", "économique", "economique", "رخيص", "أرخص"])
+                tri_longtemps = any(w in question_lower for w in ["longtemps", "longue", "durée", "duree", "long", "سنة", "عام", "طويل"])
+                tri_court = any(w in question_lower for w in ["jour", "daily", "journalier", "hebdo", "semaine", "court", "rapide"])
+                tri_beaucoup = any(w in question_lower for w in ["beaucoup", "grand", "gros", "max", "maximum", "volume", "data", "انترنت", "كثير"])
+                
+                if tri_pas_cher:
+                    query = query.order_by(Model.prix.asc())
+                elif tri_longtemps:
+                    query = query.order_by(Model.duree_j.desc())
+                elif tri_court:
+                    query = query.order_by(Model.duree_j.asc())
+                elif tri_beaucoup:
+                    query = query.order_by(Model.data_go.desc())
+                elif contraintes.get("data_min") is not None:
+                    query = query.order_by(Model.data_go.asc(), Model.prix.asc())
+                elif contraintes.get("data_max") is not None:
+                    query = query.order_by(Model.data_go.desc(), Model.prix.asc())
+
+            rows = query.limit(limit).all()
             if rows:
                 print(f"  🗄️  SQL {Model.__tablename__} : {len(rows)} résultats")
                 resultats.extend([r.content for r in rows])
@@ -554,11 +667,13 @@ def rag_query(question: str, session_id: str, lang: str,
     # ── Étape 4 : SQL search (précision numérique exacte) ──
     sql_docs = []
     if not context and contraintes:
-        sql_docs = sql_search(contraintes, db, limit=6)
+        t_sql = time.time()
+        sql_docs = sql_search(contraintes, db, question=question_enrichie, limit=6)
         if not sql_docs and contraintes.get("exclure_streaming"):
             contraintes_souples = {k: v for k, v in contraintes.items()
                                     if k != "exclure_streaming"}
-            sql_docs = sql_search(contraintes_souples, db, limit=6)
+            sql_docs = sql_search(contraintes_souples, db, question=question_enrichie, limit=6)
+        print(f"⏱️  SQL Search : {time.time() - t_sql:.3f}s")
 
     # ── Étape 5 : ChromaDB vector search pur (sans filtre) ──
     # Retourne les contenus originaux complets via les métadonnées
@@ -568,7 +683,7 @@ def rag_query(question: str, session_id: str, lang: str,
             t0 = time.time()
             results = collection.query(
                 query_texts=[question_enrichie],
-                n_results  = 40,   # plus large car on a plusieurs chunks par offre
+                n_results  = 20,   # suffisant avec déduplication sémantique
                 include    = ["documents", "distances", "metadatas"]
             )
             print(f"⏱️  ChromaDB : {time.time() - t0:.4f}s "
@@ -576,6 +691,7 @@ def rag_query(question: str, session_id: str, lang: str,
 
             # ── Dédupliquer par source_id : garder le meilleur chunk par offre ──
             # et retourner le contenu ORIGINAL (pas le chunk résumé)
+            t_dedup_c = time.time()
             vus          = {}   # source_id → (distance, original_content)
             chunks_bruts = results["documents"][0]
             distances    = results["distances"][0]
@@ -596,6 +712,7 @@ def rag_query(question: str, session_id: str, lang: str,
                     vus[source_id] = (dist, original)
 
             chroma_docs = [content for _, content in vus.values()]
+            print(f"⏱️  ChromaDB Dedup Loop : {time.time() - t_dedup_c:.3f}s")
             print(f"🔍 ChromaDB après dédup source : {len(chroma_docs)} offres uniques")
 
         except Exception as e:
@@ -607,56 +724,46 @@ def rag_query(question: str, session_id: str, lang: str,
     if not context:
         # SQL en premier (exact), ChromaDB en complément (sémantique)
         sql_set  = set(sql_docs)
-        combined = list(sql_docs)
-        for doc in chroma_docs:
-            if doc not in sql_set:
-                combined.append(doc)
+        chroma_to_rerank = [doc for doc in chroma_docs if doc not in sql_set]
 
         print(f"🔀 Fusion : {len(sql_docs)} SQL + {len(chroma_docs)} ChromaDB "
-              f"→ {len(combined)} uniques")
+              f"➔ {len(chroma_to_rerank)} à reranker")
 
-        if combined:
-            paires      = [[question, doc] for doc in combined]
+        sem_filtered = []
+        if chroma_to_rerank:
+            t_rer = time.time()
+            paires      = [[question, doc] for doc in chroma_to_rerank]
             raw_scores  = reranker.predict(paires)
+            print(f"⏱️  Reranker Predict : {time.time() - t_rer:.3f}s")
+            
             # Normalisation Sigmoïde
             scores      = 1 / (1 + np.exp(-np.array(raw_scores)))
             
             docs_scores = []
-            for doc, score in zip(combined, scores):
-                is_sql = doc in sql_set
-                # Boost SQL
-                final_score = min(1.0, score + 0.15) if is_sql else score
-                docs_scores.append({
-                    "doc": doc,
-                    "score": final_score,
-                    "is_sql": is_sql,
-                    "original_score": score
-                })
+            for doc, score in zip(chroma_to_rerank, scores):
+                if score >= 0.65: # elle etait a 0.55
+                    docs_scores.append((doc, score))
             
-            # Trier par score ajusté
-            docs_scores = sorted(docs_scores, key=lambda x: x["score"], reverse=True)
-            
-            # Seuils distincts : les documents SQL sont toujours inclus, les sémantiques doivent passer le seuil de 0.70
-            top_n = min(6, len(docs_scores))
-            filtered = []
-            for item in docs_scores[:top_n]:
-                if item["is_sql"]:
-                    # Garder impérativement les résultats SQL exacts pour éviter de jeter des correspondances mathématiques strictes
-                    filtered.append(item["doc"])
-                else:
-                    # Recherche sémantique pure soumise au seuil strict
-                    if item["score"] >= 0.70:
-                        filtered.append(item["doc"])
-            
-            print(f"🎯 Reranker avec seuils distincts (SQL: inclus, Sem: 0.70) | top scores : {[round(float(item['score']), 2) for item in docs_scores[:top_n]]}")
+            # Trier par score sémantique décroissant
+            docs_scores = sorted(docs_scores, key=lambda x: x[1], reverse=True)
+            # Prendre le top 3 sémantique pour ne pas saturer le contexte
+            sem_filtered = [doc for doc, _ in docs_scores[:3]]
+            print(f"🎯 Reranker sémantique (Sem >= 0.65) | conservés: {len(sem_filtered)} | scores: {[round(float(s), 2) for _, s in docs_scores[:3]]}")
+        else:
+            print("🎯 Reranker sémantique contourné (aucun candidat)")
 
-            if not filtered:
-                # Fallback : top 2 forcés (priorise SQL si présent)
-                filtered = [item["doc"] for item in docs_scores[:2]]
-                print("⚠️  Reranker fallback — top 2 forcés")
+        # Fusionner SQL exact et les top sémantiques filtrés
+        filtered = list(sql_docs) + sem_filtered
 
-        # Déduplication sémantique finale
-        filtered = dedupliquer_contexte(filtered, embedder, seuil=0.88)
+        if not filtered and chroma_docs:
+            # Fallback absolu si aucun document ne passe
+            filtered = chroma_docs[:6]
+            print("⚠️  Fallback — top 6 ChromaDB forcés")
+
+        # Déduplication sémantique finale (seuil augmenté à 0.96 pour ne pas jeter des offres proches mais distinctes)
+        t_f_ded = time.time()
+        filtered = dedupliquer_contexte(filtered, embedder, seuil=0.96)
+        print(f"⏱️  Final Context Dedup : {time.time() - t_f_ded:.3f}s")
 
     if not context:
         if filtered:
@@ -701,15 +808,20 @@ def rag_query(question: str, session_id: str, lang: str,
     })
     messages.append({"role": "user", "content": question})
 
+    t_gen0 = time.time()
     response = groq_client.chat.completions.create(
         model      = "llama-3.3-70b-versatile",
         messages   = messages,
         max_tokens = MAX_TOKENS,
         temperature= 0.1,
     )
+    print(f"⏱️  Génération finale LLM (Groq) : {time.time() - t_gen0:.3f}s")
 
     return response.choices[0].message.content.strip(), context
+    #raw_answer = response.choices[0].message.content.strip()
+    #answer     = supprimer_raisonnement(raw_answer)   # ← filtre raisonnement
 
+    return answer, context
 
 # ════════════════════════════════════════════════════════════════════
 #  SYNTHÈSE VOCALE
@@ -759,13 +871,38 @@ async def ask(body: QuestionInput, request: Request, db: Session = Depends(get_d
     question   = body.question.strip()
     session_id = body.session_id
 
+    t_total0 = time.time()
     if not question:
         raise HTTPException(status_code=400, detail="Question vide")
 
     lang_question      = detect_lang(question)
+    if est_small_talk(question, lang_question):
+        answer = repondre_small_talk(lang_question)
+        lang_voice = lang_question
+        filename, metadata = await speak_with_meta(answer, lang_voice)
+        audio_url = f"/static/audio/{filename}" if filename else None
+        save_message(session_id, "user",      question, lang_question, db)
+        save_message(session_id, "assistant", answer,   lang_voice,    db)
+        print(f"⚡ Small talk détecté — réponse directe ({lang_question})")
+        return {
+            "answer":      answer,
+            "audio_url":   audio_url,
+            "lang":        lang_voice,
+            "metadata":    metadata,
+            "history_len": count_exchanges(session_id, db),
+            "context":     ""
+        }
+    
+    t_rag0 = time.time()
     answer, context    = rag_query(question, session_id, lang_question, db, request)
+    print(f"⏱️  RAG Total (Reformulation + Extraction + Génération) : {time.time() - t_rag0:.3f}s")
+    
     lang_voice         = detect_lang_response(answer, lang_question)
+    
+    t_tts0 = time.time()
     filename, metadata = await speak_with_meta(answer, lang_voice)
+    print(f"⏱️  Synthèse Vocale (edge-tts) : {time.time() - t_tts0:.3f}s")
+    
     audio_url          = f"/static/audio/{filename}" if filename else None
 
     save_message(session_id, "user",      question, lang_question, db)
@@ -777,6 +914,7 @@ async def ask(body: QuestionInput, request: Request, db: Session = Depends(get_d
             try:    os.remove(fpath)
             except: pass
 
+    print(f"⏱️  Requête /ask TOTAL : {time.time() - t_total0:.3f}s")
     return {
         "answer":      answer,
         "audio_url":   audio_url,
@@ -800,183 +938,155 @@ async def reset(body: dict, db: Session = Depends(get_db)):
 #  ROUTES — ADMIN
 # ════════════════════════════════════════════════════════════════════
 
-# Tables gérées depuis la page Admin
-ADMIN_MODELS = {
-    "offers": Offer,
-    "faq": FAQ,
-    "services": Service,
-}
-
-ADMIN_LABELS = {
-    "offers": "Offres",
-    "faq": "FAQ",
-    "services": "Services",
-}
-
-
-def _get_admin_model(table: str):
-    Model = ADMIN_MODELS.get(table)
-    if not Model:
-        raise HTTPException(status_code=400, detail="Type invalide")
-    return Model
-
-
 @app.get("/admin/data")
 async def admin_data(db: Session = Depends(get_db)):
-    items = []
-    stats_by_type = {}
-
-    for table, Model in ADMIN_MODELS.items():
+    def serialize_rows(Model):
         rows = db.query(Model).order_by(Model.category, Model.id).all()
-        active_count = db.query(Model).filter_by(is_active=True).count()
+        return [
+            {
+                "id":            r.id,
+                "content":       r.content,
+                "category":      getattr(r, "category", "general"),
+                "is_active":     getattr(r, "is_active", True),
+                "needs_reindex": getattr(r, "needs_reindex", False),
+            }
+            for r in rows
+        ]
 
-        stats_by_type[table] = {
-            "label": ADMIN_LABELS.get(table, table),
-            "total": len(rows),
-            "active": active_count,
-            "inactive": len(rows) - active_count,
-        }
-
-        for row in rows:
-            items.append({
-                "id": row.id,
-                "table": table,
-                "type": table,
-                "type_label": ADMIN_LABELS.get(table, table),
-                "content": row.content,
-                "category": row.category,
-                "is_active": row.is_active,
-                "needs_reindex": row.needs_reindex,
-            })
+    offers   = serialize_rows(Offer)
+    faqs     = serialize_rows(FAQ)
+    services = serialize_rows(Service)
 
     prompt = db.query(Prompt).filter_by(name="system_prompt").first()
-
+    stats  = {
+        "total_offers":     db.query(Offer).count(),
+        "active_offers":    db.query(Offer).filter_by(is_active=True).count(),
+        "total_faqs":       db.query(FAQ).count(),
+        "active_faqs":      db.query(FAQ).filter_by(is_active=True).count(),
+        "total_services":   db.query(Service).count(),
+        "active_services":  db.query(Service).filter_by(is_active=True).count(),
+        "total_items":      db.query(Offer).count() + db.query(FAQ).count() + db.query(Service).count(),
+        "conversations":    db.query(Conversation).count(),
+    }
     return {
-        "items": items,
-        "prompt": prompt.content if prompt else "",
-        "stats": {
-            "total_items": len(items),
-            "active_items": sum(1 for item in items if item["is_active"]),
-            "inactive_items": sum(1 for item in items if not item["is_active"]),
-            "conversations": db.query(Conversation).count(),
-            "by_type": stats_by_type,
-        },
+        "offers":   offers,
+        "faqs":     faqs,
+        "services": services,
+        "prompt":   prompt.content if prompt else "",
+        "stats":    stats,
     }
 
 
-@app.post("/admin/items/{table}")
-async def admin_add_item(
-    table: str,
-    body: OfferInput,
-    request: Request,
-    db: Session = Depends(get_db)
-):
-    Model = _get_admin_model(table)
+def _get_admin_model(data_type: str):
+    mapping = {
+        "offers": Offer,
+        "faqs": FAQ,
+        "services": Service,
+    }
+    Model = mapping.get(data_type)
+    if Model is None:
+        raise HTTPException(status_code=404, detail="Type de donnée introuvable")
+    return Model
 
-    item = Model(
-        content=body.content.strip(),
-        category=body.category or table,
-        is_active=True,
-        needs_reindex=True,
-    )
 
+def _set_if_column(obj, field: str, value):
+    if value is not None and hasattr(obj, field):
+        setattr(obj, field, value)
+
+
+async def _admin_add_item(data_type: str, body: OfferInput, request: Request, db: Session):
+    Model = _get_admin_model(data_type)
+    item = Model(content=body.content.strip(), category=body.category)
+    _set_if_column(item, "is_active", True)
+    _set_if_column(item, "needs_reindex", True)
     db.add(item)
     db.commit()
     _refresh_index(request)
+    return {"status": "ok"}
 
-    return {"status": "ok", "id": item.id, "table": table}
 
-
-@app.put("/admin/items/{table}/{item_id}")
-async def admin_update_item(
-    table: str,
-    item_id: int,
-    body: OfferUpdate,
-    request: Request,
-    db: Session = Depends(get_db)
-):
-    Model = _get_admin_model(table)
+async def _admin_update_item(data_type: str, item_id: int, body: OfferUpdate, request: Request, db: Session):
+    Model = _get_admin_model(data_type)
     item = db.query(Model).filter_by(id=item_id).first()
-
     if not item:
         raise HTTPException(status_code=404, detail="Élément introuvable")
 
     if body.content is not None:
         item.content = body.content.strip()
-
-    if body.category is not None:
-        item.category = body.category.strip() or table
-
-    if body.is_active is not None:
+    if body.category is not None and hasattr(item, "category"):
+        item.category = body.category
+    if body.is_active is not None and hasattr(item, "is_active"):
         item.is_active = body.is_active
-
-    item.needs_reindex = True
+    _set_if_column(item, "needs_reindex", True)
 
     db.commit()
     _refresh_index(request)
-
     return {"status": "ok"}
 
 
-@app.delete("/admin/items/{table}/{item_id}")
-async def admin_delete_item(
-    table: str,
-    item_id: int,
-    request: Request,
-    db: Session = Depends(get_db)
-):
-    Model = _get_admin_model(table)
+async def _admin_delete_item(data_type: str, item_id: int, request: Request, db: Session):
+    Model = _get_admin_model(data_type)
     item = db.query(Model).filter_by(id=item_id).first()
-
     if not item:
         raise HTTPException(status_code=404, detail="Élément introuvable")
 
     db.delete(item)
     db.commit()
     _refresh_index(request)
-
     return {"status": "ok"}
 
 
-# Compatibilité avec ton ancien Admin.jsx : les anciennes routes offres restent valides
 @app.post("/admin/offers")
 async def admin_add_offer(body: OfferInput, request: Request, db: Session = Depends(get_db)):
-    return await admin_add_item("offers", body, request, db)
+    return await _admin_add_item("offers", body, request, db)
 
 
 @app.put("/admin/offers/{offer_id}")
-async def admin_update_offer(
-    offer_id: int,
-    body: OfferUpdate,
-    request: Request,
-    db: Session = Depends(get_db)
-):
-    return await admin_update_item("offers", offer_id, body, request, db)
+async def admin_update_offer(offer_id: int, body: OfferUpdate, request: Request, db: Session = Depends(get_db)):
+    return await _admin_update_item("offers", offer_id, body, request, db)
 
 
 @app.delete("/admin/offers/{offer_id}")
-async def admin_delete_offer(
-    offer_id: int,
-    request: Request,
-    db: Session = Depends(get_db)
-):
-    return await admin_delete_item("offers", offer_id, request, db)
+async def admin_delete_offer(offer_id: int, request: Request, db: Session = Depends(get_db)):
+    return await _admin_delete_item("offers", offer_id, request, db)
+
+
+@app.post("/admin/faqs")
+async def admin_add_faq(body: OfferInput, request: Request, db: Session = Depends(get_db)):
+    return await _admin_add_item("faqs", body, request, db)
+
+
+@app.put("/admin/faqs/{faq_id}")
+async def admin_update_faq(faq_id: int, body: OfferUpdate, request: Request, db: Session = Depends(get_db)):
+    return await _admin_update_item("faqs", faq_id, body, request, db)
+
+
+@app.delete("/admin/faqs/{faq_id}")
+async def admin_delete_faq(faq_id: int, request: Request, db: Session = Depends(get_db)):
+    return await _admin_delete_item("faqs", faq_id, request, db)
+
+
+@app.post("/admin/services")
+async def admin_add_service(body: OfferInput, request: Request, db: Session = Depends(get_db)):
+    return await _admin_add_item("services", body, request, db)
+
+
+@app.put("/admin/services/{service_id}")
+async def admin_update_service(service_id: int, body: OfferUpdate, request: Request, db: Session = Depends(get_db)):
+    return await _admin_update_item("services", service_id, body, request, db)
+
+
+@app.delete("/admin/services/{service_id}")
+async def admin_delete_service(service_id: int, request: Request, db: Session = Depends(get_db)):
+    return await _admin_delete_item("services", service_id, request, db)
 
 
 @app.put("/admin/prompt")
 async def admin_update_prompt(body: PromptUpdate, db: Session = Depends(get_db)):
     prompt = db.query(Prompt).filter_by(name="system_prompt").first()
-
     if not prompt:
-        prompt = Prompt(
-            name="system_prompt",
-            content=body.content,
-            description="Prompt principal d'Izzy"
-        )
-        db.add(prompt)
-    else:
-        prompt.content = body.content
-
+        raise HTTPException(status_code=404, detail="Prompt introuvable")
+    prompt.content = body.content
     db.commit()
     return {"status": "ok"}
 
@@ -984,32 +1094,26 @@ async def admin_update_prompt(body: PromptUpdate, db: Session = Depends(get_db))
 @app.get("/admin/stats")
 async def admin_stats(db: Session = Depends(get_db)):
     return {
-        "total_items": (
-            db.query(Offer).count()
-            + db.query(FAQ).count()
-            + db.query(Service).count()
-        ),
-        "active_items": (
-            db.query(Offer).filter_by(is_active=True).count()
-            + db.query(FAQ).filter_by(is_active=True).count()
-            + db.query(Service).filter_by(is_active=True).count()
-        ),
-        "offers": db.query(Offer).count(),
-        "faq": db.query(FAQ).count(),
-        "services": db.query(Service).count(),
-        "conversations": db.query(Conversation).count(),
+        "total_offers":    db.query(Offer).count(),
+        "active_offers":   db.query(Offer).filter_by(is_active=True).count(),
+        "total_faqs":      db.query(FAQ).count(),
+        "active_faqs":     db.query(FAQ).filter_by(is_active=True).count(),
+        "total_services":  db.query(Service).count(),
+        "active_services": db.query(Service).filter_by(is_active=True).count(),
+        "total_items":     db.query(Offer).count() + db.query(FAQ).count() + db.query(Service).count(),
+        "conversations":   db.query(Conversation).count(),
     }
 
 
 def _refresh_index(request: Request):
     new_index, new_docs = rebuild_index(
         request.app.state.embedder,
-        request.app.state.groq_client
+        request.app.state.groq_client   # ← extraction métadonnées via LLM
     )
     if new_index is not None:
         request.app.state.faiss_index = new_index
-        request.app.state.documents = new_docs
-        print(f"🔄 Index ChromaDB mis à jour — {len(new_docs)} documents")
+        request.app.state.documents   = new_docs
+        print(f"🔄 Index ChromaDB mis à jour — {len(new_docs)} offres")
 
 
 @app.post("/transcribe")
@@ -1043,8 +1147,12 @@ async def ask_text(body: QuestionInput, request: Request,
                    db: Session = Depends(get_db)):
     question      = body.question.strip()
     lang_question = detect_lang(question)
-    answer, context = rag_query(question, body.session_id,
-                                lang_question, db, request)
+    
+    if est_small_talk(question, lang_question):
+        answer = repondre_small_talk(lang_question)
+        return {"answer": answer, "lang": lang_question, "context": ""}
+    
+    answer, context = rag_query(question, body.session_id, lang_question, db, request)
     lang_voice = detect_lang_response(answer, lang_question)
     return {
         "answer":  answer,
